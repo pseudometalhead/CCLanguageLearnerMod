@@ -17,6 +17,10 @@ Type `/learn` in Claude Code. **German, A1 → C1**, 20 lessons per level (100 i
 3. 5 hearts, combo bonus XP for streaks of correct answers, and the owl 🦉 cheers you on in German.
 4. Reordering a sentence's words costs no heart, because word order is often free; you just see the model answer.
 
+## Keyboard
+With the pane focused: **1–4** pick an option, **1–9** tap a word chip, **1–5** and **q–t** match pairs, **c** check / continue,
+**u** undo, **p** play the audio, **s** start, **n** next lesson, **r** try again, **m** back to the map.
+
 ## Audio
 German is spoken with the system speech synthesizer (voice **Anna**), so real playback needs **macOS** with that voice
 (System Settings → Accessibility → Spoken Content → System Voice → Manage Voices). Elsewhere the mod shows the German text instead.
