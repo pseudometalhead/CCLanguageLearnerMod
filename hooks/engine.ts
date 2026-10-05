@@ -26,7 +26,7 @@ const distract = (lang: string, level: string, answer: string, side: 0 | 1, seed
   const course = COURSES[lang]
   const near = course[level].flatMap(l => l.words.map(w => w[side]))
   const far = Object.values(course).flatMap(ls => ls.flatMap(l => l.words.map(w => w[side])))
-  const pick = (pool: string[]) => [...new Set(pool)].filter(w => w !== answer)
+  const pick = (pool: string[]) => [...new Set(pool)].filter(w => w.toLowerCase() !== answer.toLowerCase())
   const first = shuffle(pick(near), seed)
   const rest = shuffle(pick(far).filter(w => !first.includes(w)), seed + 5)
   return [...first, ...rest].slice(0, 3)
@@ -50,12 +50,14 @@ const spell = ([t, e]: Pair, seed: number): Exercise => {
 const cloze = (lang: string, level: string, [t, e]: Pair, seed: number): Exercise => {
   const m = /\[(.+?)\]/.exec(t)
   const answer = m ? m[1] : t.split(' ')[0]
+  // A blank at the start of the sentence is capitalised: capitalise the options too, so case gives nothing away.
+  const cap = t.startsWith('[') ? (w: string) => w.charAt(0).toUpperCase() + w.slice(1) : (w: string) => w
   return {
     kind: 'choice',
     prompt: 'Fill in the blank',
     context: `${t.replace(/\[.+?\]/, '＿＿＿＿')}\n${e}`,
     answer,
-    options: shuffle([answer, ...distract(lang, level, answer, 0, seed)], seed + 9),
+    options: shuffle([answer, ...distract(lang, level, answer, 0, seed).map(cap)], seed + 9),
   }
 }
 

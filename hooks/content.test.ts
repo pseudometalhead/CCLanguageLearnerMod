@@ -31,6 +31,7 @@ test('every generated exercise is solvable and well formed', () => {
             if (e.kind === 'choice') {
               expect(e.options.length).toBe(4)
               expect(new Set(e.options).size).toBe(4)
+              expect(new Set(e.options.map(o => o.toLowerCase())).size).toBe(4)
               expect(e.options).toContain(e.answer)
             } else if (e.kind === 'match') {
               expect(e.left.length).toBe(5)

@@ -22,7 +22,7 @@ const fresh = {
 
 const initial: App = {
   screen: 'home',
-  lang: 'Spanish',
+  lang: 'German',
   level: 'A1',
   lesson: 0,
   ex: [],
@@ -47,7 +47,7 @@ const isUnlocked = (a: App, level: string) => {
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
-    await $.command.register({ name: 'learn', description: 'Open the language learning pane (A1 to C1)' })
+    await $.command.register({ name: 'learn', description: 'Open the German learning pane (A1 to C1)' })
     const saved = (await $.store.get(STORE)) as Partial<App> | undefined
     if (saved) {
       const today = Math.floor((await $.clock.now()) / DAY)
@@ -66,7 +66,7 @@ export const register: Register = on => {
 
   on('command.run', { command: 'learn' }, async $ => {
     await $.ui.open({ id: PANE, title: 'LinguaCC' })
-    return { text: 'LinguaCC opened. Pick a language and a level.' }
+    return { text: 'LinguaCC opened. Pick a level.' }
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
@@ -180,11 +180,11 @@ export const register: Register = on => {
       return (
         <Box flexDirection="column">
           {header}
-          <Box>
+          {Object.keys(COURSES).length > 1 && <Box>
             {Object.keys(COURSES).map(l => (
               <Button key={`lang-${l}`} label={l === s.lang ? `● ${l} ` : `○ ${l} `} onPress={() => update($, app, a => ({ ...a, lang: l }))} />
             ))}
-          </Box>
+          </Box>}
           {LEVELS.map(lv => {
             const lessons = COURSES[s.lang][lv]
             const open = isUnlocked(s, lv)

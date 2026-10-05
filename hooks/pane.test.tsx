@@ -40,7 +40,7 @@ test('a perfect lesson earns XP and stars, and marks the lesson done', async ($,
     expect(await ui.find({ text: /🔒 B1/ })).toBeDefined()
     await ui.press({ key: 'les-A1-0' })
 
-    for (const x of buildLesson('Spanish', 'A1', 0, SEED)) {
+    for (const x of buildLesson('German', 'A1', 0, SEED)) {
       await solve(ui, x)
       expect(await ui.find({ text: /Correct|Matched/ })).toBeDefined()
       await ui.press({ key: 'continue' })
@@ -59,10 +59,10 @@ test('five wrong answers lose all hearts and fail the lesson', async ($, on) => 
   mock.store(on)
   const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
   await ui.press({ key: 'les-A1-1' })
-  const ex = buildLesson('Spanish', 'A1', 1, SEED).filter(x => x.kind === 'choice' || x.kind === 'build' || x.kind === 'spell')
+  const ex = buildLesson('German', 'A1', 1, SEED).filter(x => x.kind === 'choice' || x.kind === 'build' || x.kind === 'spell')
   expect(ex.length).toBeGreaterThanOrEqual(5)
   // exercise order is fixed: choice, match(skipped by mistakes below), spell, cloze, choice, build, spell
-  const all = buildLesson('Spanish', 'A1', 1, SEED)
+  const all = buildLesson('German', 'A1', 1, SEED)
   let lost = 0
   for (const x of all) {
     if (lost === 5) break
