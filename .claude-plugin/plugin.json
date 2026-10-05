@@ -1,0 +1,1 @@
+{ "name": "language-learner", "version": "0.1.0", "description": "A Duolingo-style language learning pane: bite-sized lessons, quizzes, XP, hearts and daily streaks. Type /learn.", "types": "./types/index.d.ts" }
