@@ -83,6 +83,7 @@ test('the map starts at A1 with one open lesson and the rest locked', async ($, 
     expect(await ui.find({ text: /UNIT 1 · 👋 Hallo!/ })).toBeDefined()
     expect(await ui.find({ text: /Greetings/ })).toBeDefined()
     expect(await ui.find({ text: /START/ })).toBeDefined()
+    expect(await ui.find({ text: /Willkommen/ })).toBeDefined()
     // lesson 2 is locked
     await ui.press({ key: 'node-1' })
     expect(await ui.find({ text: /Finish the lesson before it/ })).toBeDefined()

@@ -296,11 +296,16 @@ export const register: Register = on => {
       const unit = UNITS[s.level][s.unit]
       const cur = firstOpen(s, s.level)
       const wind = s.unit % 2 === 0 ? WIND : [...WIND].reverse()
+      const fresh0 = doneCount(s, 'A1') === 0 && s.xp === 0
       const owl = !open
-        ? 'This level is locked. Finish the one before or jump ahead!'
-        : n >= LESSONS_PER_LEVEL
-          ? 'Alles geschafft. Sehr gut!'
-          : `Auf geht’s: ${lessonInfo(s.level, cur).title}!`
+        ? 'This level is locked. Finish the one before, or jump ahead!'
+        : fresh0
+          ? 'Willkommen! Tap the ▶️ to start your first lesson.'
+          : n >= LESSONS_PER_LEVEL
+            ? 'Alles geschafft. Sehr gut!'
+            : s.dayXp >= GOAL
+              ? `Tagesziel erreicht! Next up: ${lessonInfo(s.level, cur).title}.`
+              : `Auf geht’s: ${lessonInfo(s.level, cur).title}!`
       return (
         <Box flexDirection="column">
           {header}
