@@ -323,7 +323,7 @@ export const register: Register = on => {
                   </Box>
                 )}
                 <Box marginLeft={wind[p]}>
-                  <Box borderStyle="round" borderColor={color} paddingX={1}>
+                  <Box borderStyle={st === 'current' ? 'double' : 'round'} borderColor={color} paddingX={1}>
                     <Button key={`node-${idx}`} label={face} onPress={() => openLesson(s.level, idx)} />
                   </Box>
                   <Box flexDirection="column" marginLeft={1}>
@@ -372,7 +372,8 @@ export const register: Register = on => {
               <Text bold>New words <Text dimColor>(tap 🔊 to hear)</Text></Text>
               {lesson!.words.map((w, k) => (
                 <Box key={`wrow-${k}`}>
-                  <Button key={`w-${k}`} label={`🔊 ${w[0]}`} onPress={() => say(w[0])} />
+                  <Button key={`w-${k}`} label="🔊 " onPress={() => say(w[0])} />
+                  <Text bold color={info.color}>{w[0]}</Text>
                   <Text dimColor>  {w[1]}</Text>
                 </Box>
               ))}
