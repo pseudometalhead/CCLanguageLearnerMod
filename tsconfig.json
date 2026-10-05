@@ -1,0 +1,1 @@
+{ "extends": "./.claude-plugin/types/tsconfig.json", "compilerOptions": { "noUncheckedIndexedAccess": false }, "include": ["hooks", "types"] }
