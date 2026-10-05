@@ -316,3 +316,37 @@ test('practice appears after the first finished lesson, pays 5 XP and leaves the
   expect(await ui.find({ text: /★★★/ })).toBeDefined()
   await ui.unmount()
 })
+
+const DAYMS = 86_400_000
+const allA1 = Object.fromEntries(Array.from({ length: 20 }, (_, i) => [`A1:${i}`, 3]))
+const restore = async ($: any, on: any, saved: Record<string, unknown>) => {
+  mock.clock(on, { now: NOW })
+  mock.store(on, { 'app-v3': saved })
+  on('command.register', async () => ({ value: undefined }))
+  on('session.start', async (_$: any, e: any) => ({ cwd: e.cwd }))
+  await $.session.start({ cwd: '/work', surface: 'terminal', isInteractive: true })
+}
+
+test('progress saved by an earlier session is restored: level, stars, XP, streak, sound', async ($, on) => {
+  const today = Math.floor(NOW / DAYMS)
+  await restore($, on, { sound: false, xp: 120, streak: 3, lastDay: today - 1, goalDay: today - 1, dayXp: 25, stars: allA1, tested: {} })
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  expect(await ui.find({ text: /A2 · Elementary/ })).toBeDefined() // A1 is done, so the map opens on A2
+  expect(await ui.find({ text: /⭐ 120/ })).toBeDefined()
+  expect(await ui.find({ text: /🔥 3/ })).toBeDefined() // played yesterday, so the streak survives
+  expect(await ui.find({ text: /🔇 off/ })).toBeDefined()
+  expect(await ui.find({ text: /0\/30/ })).toBeDefined() // the daily goal restarts on a new day
+  await ui.press({ key: 'tab-A1' })
+  expect(await ui.find({ text: /20\/20/ })).toBeDefined()
+  await ui.unmount()
+})
+
+test('a streak lapses after a missed day, and a placement unlock is remembered', async ($, on) => {
+  const today = Math.floor(NOW / DAYMS)
+  await restore($, on, { xp: 5, streak: 9, lastDay: today - 3, goalDay: today - 3, dayXp: 5, stars: {}, tested: { B1: true } })
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  expect(await ui.find({ text: /🔥 0/ })).toBeDefined()
+  expect(await ui.find({ text: /B1 · Intermediate/ })).toBeDefined() // opened by the quiz, so it is the level shown
+  expect(await ui.find({ text: /Know B1 already/ })).toBeUndefined()
+  await ui.unmount()
+})
