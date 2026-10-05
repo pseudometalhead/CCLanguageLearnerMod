@@ -3,6 +3,7 @@ export type Level = 'A1' | 'A2' | 'B1' | 'B2' | 'C1'
 export type Exercise =
   | {
       kind: 'choice'
+      title: string
       prompt: string
       context?: string
       answer: string
@@ -14,14 +15,15 @@ export type Exercise =
       /** German text spoken once the exercise is answered. */
       after?: string
     }
-  | { kind: 'match'; left: string[]; right: string[]; pairs: Record<string, string> }
-  | { kind: 'spell'; prompt: string; answer: string; bank: string[]; after?: string }
-  | { kind: 'build'; prompt: string; answer: string; bank: string[]; after?: string }
+  | { kind: 'match'; title: string; left: string[]; right: string[]; pairs: Record<string, string> }
+  | { kind: 'spell'; title: string; prompt: string; answer: string; bank: string[]; say?: string; auto?: boolean; after?: string }
+  | { kind: 'build'; title: string; prompt: string; answer: string; bank: string[]; say?: string; auto?: boolean; after?: string }
 
 export type App = {
-  screen: 'home' | 'play' | 'result'
-  lang: string
+  screen: 'home' | 'intro' | 'play' | 'result'
   level: Level
+  unit: number
+  /** 0 to 19 within the level; -1 is the placement quiz that unlocks `level`. */
   lesson: number
   ex: Exercise[]
   i: number
@@ -34,12 +36,22 @@ export type App = {
   note: string
   hearts: number
   sound: boolean
+  combo: number
+  best: number
+  gain: number
   xp: number
+  dayXp: number
+  goalDay: number
   streak: number
   lastDay: number
   correct: number
   gained: number
-  done: Record<string, number[]>
+  lastStars: number
+  passed: boolean
+  /** Best stars (1 to 3) per finished lesson, keyed "A1:0". */
+  stars: Record<string, number>
+  /** Levels opened by passing the placement quiz. */
+  tested: Record<string, boolean>
 }
 
 declare module 'claude-code' {

@@ -1,26 +1,28 @@
-# LinguaCC — German learning mod for Claude Code
+# LinguaCC — a Duolingo-style German course for Claude Code
 
-A Duolingo-style language learning pane. Type `/learn` to open it.
+Type `/learn` in Claude Code. **German, A1 → C1**, 20 lessons per level (100 in all).
 
-- **German**, a full course that runs **CEFR A1 → C1** (greetings and food up to nuance and idioms)
-- **Five puzzle types:** multiple choice, fill the gap, match the pairs, spell the word, build the sentence
-- **Level map** with locked levels, ✅ lessons, progress bars, ⭐ ratings (1–3 stars by hearts left)
-- XP, 5 hearts per lesson, daily streaks; progress is saved across sessions
+## The map
+- Five levels (A1 Beginner … C1 Advanced), each with **4 units × 5 nodes**: four lessons and a 🏆 unit review.
+- A winding path of nodes: ▶️ start, 🔒 locked, ⭐ done (1 to 3 stars by hearts left), 👑 reviewed unit.
+- Know a level already? Take the **placement quiz** (12 questions on the level below, two mistakes allowed) to unlock it.
+- Streak 🔥, XP ⭐ and a daily goal 🎯 of 30 XP.
 
-## Run it
-
-    claude --plugin-dir /path/to/this/repo
-
-## Test it
-
-    claude plugin validate .
-    claude plugin test .
+## A lesson
+1. **Intro:** the five new words with 🔊, plus a 💡 grammar tip for the unit.
+2. **11 to 14 puzzles**, ramping up as the unit goes on:
+   select the meaning · how do you say it · tap the pairs · listen and choose · article (der/die/das) ·
+   spell it / spell what you hear · fill the gap · translate (pick) · translate (word bank, with decoys) ·
+   type what you hear · translate into English.
+3. 5 hearts, combo bonus XP for streaks of correct answers, and the owl 🦉 cheers you on in German.
+4. Reordering a sentence's words costs no heart, because word order is often free; you just see the model answer.
 
 ## Audio
+German is spoken with the system speech synthesizer (voice **Anna**), so real playback needs **macOS** with that voice
+(System Settings → Accessibility → Spoken Content → System Voice → Manage Voices). Elsewhere the mod shows the German text instead.
+The 🔊/🔇 toggle mutes everything.
 
-German is spoken with the system speech synthesizer (`$.audio.speak`, voice **Anna**), so real playback needs **macOS** with the German "Anna" voice installed (System Settings → Accessibility → Spoken Content → System Voice → Manage Voices). Elsewhere the mod shows the German text instead of failing.
-
-- 🎧 **Listening puzzles** autoplay a German word or sentence; pick its meaning. Two per lesson.
-- 🔊 **Play** on "What does X mean?" puzzles; 🔁 press again to repeat.
-- After you answer, the correct German word or sentence is read aloud.
-- The 🔊/🔇 toggle in the header mutes everything, and is remembered.
+## Run and test
+    claude --plugin-dir /path/to/this/repo
+    claude plugin validate .
+    claude plugin test .

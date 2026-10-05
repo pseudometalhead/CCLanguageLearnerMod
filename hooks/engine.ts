@@ -1,10 +1,10 @@
-import type { Exercise } from '../types'
-import { COURSES } from './lessons'
-import type { Pair } from './lessons'
+import type { Exercise, Level } from '../types'
+import { LEVELS, UNITS } from './lessons'
+import type { Lesson, Pair, Unit } from './lessons'
 
 export const shuffle = <T,>(items: readonly T[], seed: number): T[] => {
   const out = [...items]
-  let s = (seed % 2147483647) + 1
+  let s = (Math.abs(seed) % 2147483646) + 1
   for (let i = out.length - 1; i > 0; i--) {
     s = (s * 48271) % 2147483647
     const j = s % (i + 1)
@@ -13,105 +13,267 @@ export const shuffle = <T,>(items: readonly T[], seed: number): T[] => {
   return out
 }
 
-const differs = <T,>(items: T[], seed: number, same: (a: T[]) => boolean): T[] => {
-  let out = shuffle(items, seed)
-  for (let k = 1; same(out) && k < 20 && items.length > 1; k++) out = shuffle(items, seed + k * 101)
-  return out
+const ARTICLE = /^(der|die|das) /
+export const hasArticle = (w: string) => ARTICLE.test(w)
+export const stripArt = (w: string) => w.replace(ARTICLE, '')
+export const plain = (s: string) => s.replace(/[[\]]/g, '')
+// Word tokens of a sentence: punctuation does not count, as in Duolingo.
+export const tokens = (s: string) => plain(s).replace(/[,.!?;:]/g, '').split(/\s+/).filter(Boolean)
+const isCap = (w: string) => /^[A-ZÄÖÜ]/.test(w)
+const hasGap = (p: Pair) => /\[.+?\]/.test(p[0])
+
+const wordsOf = (units: Unit[]): Pair[] => units.flatMap(u => u.lessons.flatMap(l => l.words))
+const sentencesOf = (units: Unit[]): Pair[] => units.flatMap(u => u.lessons.flatMap(l => [...l.sentences]))
+const levelWords = (level: string) => wordsOf(UNITS[level])
+const levelSentences = (level: string) => sentencesOf(UNITS[level])
+const courseWords = LEVELS.flatMap(levelWords)
+
+const unique = (items: string[]) => [...new Map(items.map(i => [i.toLowerCase(), i])).values()]
+
+// Options that look alike give nothing away: nouns with nouns, verbs with verbs.
+const shapeDe = (w: string) => (hasArticle(w) ? 'noun' : w.includes(' ') ? 'phrase' : 'word')
+const shapeEn = (w: string) => (w.startsWith('to ') ? 'verb' : w.includes(' ') ? 'phrase' : 'word')
+
+// Three wrong options for `answer`: the same shape and level first, then anything from the course.
+const wrongs = (pool: string[], fallback: string[], answer: string, seed: number, shape: (w: string) => string): string[] => {
+  const ok = (w: string) => w.toLowerCase() !== answer.toLowerCase()
+  const alike = (w: string) => shape(w) === shape(answer)
+  const near = shuffle(unique(pool).filter(w => ok(w) && alike(w)), seed)
+  const far = shuffle(unique(fallback).filter(w => ok(w) && alike(w) && !near.includes(w)), seed + 5)
+  const rest = shuffle(unique([...pool, ...fallback]).filter(w => ok(w) && !near.includes(w) && !far.includes(w)), seed + 9)
+  return [...near, ...far, ...rest].slice(0, 3)
 }
 
-const spellable = (w: string) => w.replace(/ /g, '').length <= 12
+type Ctx = { level: string; seed: number }
 
-// Three wrong options for `answer`: same level first, then the rest of the course.
-const distract = (lang: string, level: string, answer: string, side: 0 | 1, seed: number): string[] => {
-  const course = COURSES[lang]
-  const near = course[level].flatMap(l => l.words.map(w => w[side]))
-  const far = Object.values(course).flatMap(ls => ls.flatMap(l => l.words.map(w => w[side])))
-  const pick = (pool: string[]) => [...new Set(pool)].filter(w => w.toLowerCase() !== answer.toLowerCase())
-  const first = shuffle(pick(near), seed)
-  const rest = shuffle(pick(far).filter(w => !first.includes(w)), seed + 5)
-  return [...first, ...rest].slice(0, 3)
-}
-
-const choice = (lang: string, level: string, [t, e]: Pair, toEnglish: boolean, seed: number): Exercise => {
-  const answer = toEnglish ? e : t
-  return {
-    kind: 'choice',
-    prompt: toEnglish ? `What does “${t}” mean?` : `How do you say “${e}” in ${lang}?`,
-    say: toEnglish ? t : undefined,
-    after: toEnglish ? undefined : t,
-    answer,
-    options: shuffle([answer, ...distract(lang, level, answer, toEnglish ? 1 : 0, seed)], seed + 3),
-  }
-}
-
-const spell = ([t, e]: Pair, seed: number): Exercise => {
-  const letters = [...t.replace(/ /g, '')]
-  return { kind: 'spell', prompt: `Spell “${e}”`, after: t, answer: letters.join(''), bank: differs(letters, seed, a => a.join('') === letters.join('')) }
-}
-
-const cloze = (lang: string, level: string, [t, e]: Pair, seed: number): Exercise => {
-  const m = /\[(.+?)\]/.exec(t)
-  const answer = m ? m[1] : t.split(' ')[0]
-  // A blank at the start of the sentence is capitalised: capitalise the options too, so case gives nothing away.
-  const cap = t.startsWith('[') ? (w: string) => w.charAt(0).toUpperCase() + w.slice(1) : (w: string) => w
-  return {
-    kind: 'choice',
-    prompt: 'Fill in the blank',
-    after: t.replace(/[[\]]/g, ''),
-    context: `${t.replace(/\[.+?\]/, '＿＿＿＿')}\n${e}`,
-    answer,
-    options: shuffle([answer, ...distract(lang, level, answer, 0, seed).map(cap)], seed + 9),
-  }
-}
-
-const build = ([t, e]: Pair, seed: number): Exercise => {
-  const words = t.replace(/[[\]]/g, '').split(' ')
-  return { kind: 'build', prompt: e, after: words.join(' '), answer: words.join(' '), bank: differs(words, seed, a => a.join(' ') === words.join(' ')) }
-}
-
-const listen = (lang: string, level: string, [t, e]: Pair, seed: number, sentence: boolean): Exercise => {
-  const say = t.replace(/[[\]]/g, '')
-  const pool = sentence
-    ? COURSES[lang][level].flatMap(l => l.sentences.map(p => p[1]))
-    : COURSES[lang][level].flatMap(l => l.words.map(w => w[1]))
-  const wrong = shuffle([...new Set(pool)].filter(w => w !== e), seed).slice(0, 3)
-  return {
-    kind: 'choice',
-    prompt: sentence ? 'What does the sentence mean?' : 'What did you hear?',
-    say,
-    auto: true,
-    answer: e,
-    options: shuffle([e, ...wrong], seed + 11),
-  }
-}
-
-const match = (lesson: Pair[], seed: number): Exercise => ({
-  kind: 'match',
-  left: shuffle(lesson.map(w => w[0]), seed),
-  right: shuffle(lesson.map(w => w[1]), seed + 17),
-  pairs: Object.fromEntries(lesson),
+const chooseDe = ({ level, seed }: Ctx, [t, e]: Pair): Exercise => ({
+  kind: 'choice',
+  title: 'Select the correct meaning',
+  prompt: `“${t}”`,
+  say: t,
+  answer: e,
+  options: shuffle([e, ...wrongs(levelWords(level).map(w => w[1]), courseWords.map(w => w[1]), e, seed, shapeEn)], seed + 3),
 })
 
-export const buildLesson = (lang: string, level: string, idx: number, seed: number): Exercise[] => {
-  const l = COURSES[lang][level][idx]
+const chooseEn = ({ level, seed }: Ctx, [t, e]: Pair): Exercise => ({
+  kind: 'choice',
+  title: 'How do you say this in German?',
+  prompt: `“${e}”`,
+  after: t,
+  answer: t,
+  options: shuffle([t, ...wrongs(levelWords(level).map(w => w[0]), courseWords.map(w => w[0]), t, seed, shapeDe)], seed + 3),
+})
+
+const listenWord = ({ level, seed }: Ctx, [t, e]: Pair): Exercise => ({
+  kind: 'choice',
+  title: 'What did you hear?',
+  prompt: 'Listen carefully…',
+  say: t,
+  auto: true,
+  answer: e,
+  options: shuffle([e, ...wrongs(levelWords(level).map(w => w[1]), courseWords.map(w => w[1]), e, seed, shapeEn)], seed + 3),
+})
+
+const article = (_: Ctx, [t, e]: Pair): Exercise => ({
+  kind: 'choice',
+  title: 'Choose the correct article',
+  prompt: `＿＿＿ ${stripArt(t)}`,
+  context: e,
+  after: t,
+  answer: ARTICLE.exec(t)![1],
+  options: ['der', 'die', 'das'],
+})
+
+const spellable = (w: string) => !stripArt(w).includes(' ') && stripArt(w).length <= 12
+
+const spell = ({ seed }: Ctx, [t, e]: Pair, hear: boolean): Exercise => {
+  const word = stripArt(t)
+  const letters = [...word]
+  let bank = shuffle(letters, seed)
+  for (let k = 1; bank.join('') === word && k < 20; k++) bank = shuffle(letters, seed + k * 101)
+  return {
+    kind: 'spell',
+    title: hear ? 'Type what you hear' : 'Spell this word in German',
+    prompt: hear ? 'Listen and spell the word' : `“${e}”`,
+    say: hear ? word : undefined,
+    auto: hear,
+    after: t,
+    answer: word,
+    bank,
+  }
+}
+
+const cloze = ({ level, seed }: Ctx, [t, e]: Pair): Exercise => {
+  const m = /\[(.+?)\]/.exec(t)
+  const answer = m ? m[1] : tokens(t)[0]
+  const multi = answer.includes(' ')
+  const atStart = t.startsWith('[')
+  const cap = isCap(answer)
+  const pool = unique(levelWords(level).map(w => stripArt(w[0]))).filter(w => w.includes(' ') === multi)
+  const more = unique(courseWords.map(w => stripArt(w[0]))).filter(w => w.includes(' ') === multi)
+  const same = (list: string[]) => (atStart ? list : list.filter(w => isCap(w) === cap))
+  const near = shuffle(same(pool).filter(w => w.toLowerCase() !== answer.toLowerCase()), seed)
+  const far = shuffle(same(more).filter(w => w.toLowerCase() !== answer.toLowerCase() && !near.includes(w)), seed + 5)
+  const fix = atStart ? (w: string) => w.charAt(0).toUpperCase() + w.slice(1) : (w: string) => w
+  const wrong = [...near, ...far].slice(0, 3).map(fix)
+  return {
+    kind: 'choice',
+    title: 'Fill in the missing word',
+    prompt: plain(t.replace(/\[.+?\]/, '＿＿＿')),
+    context: e,
+    after: plain(t),
+    answer,
+    options: shuffle([answer, ...wrong], seed + 9),
+  }
+}
+
+const translateChoice = ({ level, seed }: Ctx, [t, e]: Pair, hear: boolean): Exercise => ({
+  kind: 'choice',
+  title: hear ? 'What does the speaker say?' : 'Select the correct translation',
+  prompt: hear ? 'Listen carefully…' : plain(t),
+  say: plain(t),
+  auto: hear,
+  answer: e,
+  options: shuffle([e, ...wrongs(levelSentences(level).map(s => s[1]), levelSentences(level).map(s => s[1]), e, seed, () => '')], seed + 11),
+})
+
+const decoysFor = (level: string, words: string[], n: number, seed: number): string[] => {
+  const have = new Set(words.map(w => w.toLowerCase()))
+  const pool = unique(levelSentences(level).flatMap(s => tokens(s[0]))).filter(w => !have.has(w.toLowerCase()) && w.length > 1)
+  return shuffle(pool, seed).slice(0, n)
+}
+
+const orderedBank = (words: string[], seed: number) => {
+  let bank = shuffle(words, seed)
+  for (let k = 1; bank.join(' ') === words.join(' ') && k < 20 && words.length > 1; k++) bank = shuffle(words, seed + k * 101)
+  return bank
+}
+
+const buildEnDe = ({ level, seed }: Ctx, [t, e]: Pair, decoys: number): Exercise => {
+  const words = tokens(t)
+  return { kind: 'build', title: 'Translate this sentence', prompt: e, after: words.join(' '), answer: words.join(' '), bank: orderedBank([...words, ...decoysFor(level, words, decoys, seed)], seed) }
+}
+
+const buildDeEn = ({ seed }: Ctx, [t, e]: Pair): Exercise => {
+  const words = tokens(e)
+  return { kind: 'build', title: 'Translate into English', prompt: plain(t), say: plain(t), answer: words.join(' '), bank: orderedBank(words, seed) }
+}
+
+const listenBuild = ({ level, seed }: Ctx, [t]: Pair, decoys: number): Exercise => {
+  const words = tokens(t)
+  return {
+    kind: 'build',
+    title: 'Type what you hear',
+    prompt: 'Listen and build the sentence',
+    say: plain(t),
+    auto: true,
+    answer: words.join(' '),
+    bank: orderedBank([...words, ...decoysFor(level, words, decoys, seed)], seed),
+  }
+}
+
+const match = ({ seed }: Ctx, pairs: Pair[]): Exercise => ({
+  kind: 'match',
+  title: 'Tap the matching pairs',
+  left: shuffle(pairs.map(p => p[0]), seed),
+  right: shuffle(pairs.map(p => p[1]), seed + 17),
+  pairs: Object.fromEntries(pairs),
+})
+
+const compact = (list: (Exercise | undefined)[]) => list.filter((x): x is Exercise => x !== undefined)
+
+/** A lesson of five words and two sentences, with the puzzles ramping up as the unit goes on. */
+const contentLesson = (level: string, l: Lesson, p: number, seed: number): Exercise[] => {
+  const c = (n: number): Ctx => ({ level, seed: seed + n * 7 })
   const w = l.words
-  const short = w.filter(p => spellable(p[0]))
-  const out: Exercise[] = [
-    choice(lang, level, w[0], true, seed),
-    match(w, seed + 1),
-    short[0] ? spell(short[0], seed + 2) : choice(lang, level, w[1], false, seed + 2),
-    cloze(lang, level, l.sentences[0], seed + 3),
-    listen(lang, level, w[4], seed + 4, false),
-    choice(lang, level, w[2], false, seed + 5),
-    build(l.sentences[1], seed + 6),
-    listen(lang, level, l.sentences[1], seed + 7, true),
-    short[1] ? spell(short[1], seed + 8) : choice(lang, level, w[3], true, seed + 8),
-  ]
-  return out
+  const [s0, s1] = l.sentences
+  const noun = w.find(x => hasArticle(x[0]))
+  const spellW = w.filter(x => spellable(x[0]))
+  const hearSpell = p >= 2
+  return compact([
+    chooseDe(c(1), w[0]),
+    chooseEn(c(2), w[1]),
+    match(c(3), w),
+    listenWord(c(4), w[2]),
+    noun ? article(c(5), noun) : chooseEn(c(5), w[3]),
+    spellW[0] ? spell(c(6), spellW[0], hearSpell) : chooseDe(c(6), w[3]),
+    cloze(c(7), s0),
+    translateChoice(c(8), s1, false),
+    buildEnDe(c(9), s0, p),
+    p >= 2 ? listenBuild(c(10), s0, 1) : translateChoice(c(10), s0, true),
+    buildDeEn(c(11), s1),
+    p >= 1 ? (spellW[1] ? spell(c(12), spellW[1], true) : listenWord(c(12), w[4])) : chooseDe(c(12), w[4]),
+    p >= 3 ? buildEnDe(c(13), s1, 2) : undefined,
+  ])
+}
+
+/** The unit review: a mix of everything taught in the unit, hard puzzles first. */
+const review = (level: string, unit: Unit, seed: number): Exercise[] => {
+  const c = (n: number): Ctx => ({ level, seed: seed + n * 7 })
+  const words = shuffle(wordsOf([unit]), seed)
+  const sents = shuffle(sentencesOf([unit]), seed + 1)
+  const gaps = sents.filter(hasGap)
+  const nouns = words.filter(x => hasArticle(x[0]))
+  const spellW = words.filter(x => spellable(x[0]))
+  return compact([
+    match(c(1), words.slice(0, 5)),
+    chooseDe(c(2), words[5]),
+    listenWord(c(3), words[6]),
+    nouns[0] ? article(c(4), nouns[0]) : chooseEn(c(4), words[7]),
+    cloze(c(5), gaps[0]),
+    spellW[0] ? spell(c(6), spellW[0], true) : chooseEn(c(6), words[8]),
+    translateChoice(c(7), sents[1], false),
+    buildEnDe(c(8), sents[2], 2),
+    listenBuild(c(9), sents[3], 1),
+    match(c(10), words.slice(10, 15)),
+    buildDeEn(c(11), sents[4]),
+    translateChoice(c(12), sents[5], true),
+    gaps[1] ? cloze(c(13), gaps[1]) : undefined,
+    buildEnDe(c(14), sents[7], 2),
+  ])
+}
+
+/** The placement quiz that opens `level` by testing the one below it. */
+export const buildTest = (level: Level, seed: number): Exercise[] => {
+  const src = LEVELS[Math.max(0, LEVELS.indexOf(level) - 1)]
+  const c = (n: number): Ctx => ({ level: src, seed: seed + n * 7 })
+  const words = shuffle(levelWords(src), seed)
+  const sents = shuffle(levelSentences(src), seed + 1)
+  const gaps = sents.filter(hasGap)
+  const nouns = words.filter(x => hasArticle(x[0]))
+  return compact([
+    chooseDe(c(1), words[0]),
+    chooseEn(c(2), words[1]),
+    match(c(3), words.slice(2, 7)),
+    listenWord(c(4), words[7]),
+    nouns[0] ? article(c(5), nouns[0]) : chooseEn(c(5), words[8]),
+    cloze(c(6), gaps[0]),
+    translateChoice(c(7), sents[1], false),
+    buildEnDe(c(8), sents[2], 2),
+    listenBuild(c(9), sents[3], 1),
+    translateChoice(c(10), sents[4], true),
+    buildDeEn(c(11), sents[5]),
+    cloze(c(12), gaps[1]),
+  ])
+}
+
+export const LESSONS_PER_LEVEL = 20
+export const isReview = (idx: number) => idx % 5 === 4
+export const unitIndex = (idx: number) => Math.floor(idx / 5)
+
+export const lessonInfo = (level: string, idx: number) => {
+  const unit = UNITS[level][unitIndex(idx)]
+  const review = isReview(idx)
+  return { unit, review, lesson: review ? undefined : unit.lessons[idx % 5], title: review ? 'Unit review' : unit.lessons[idx % 5].title }
+}
+
+export const buildLesson = (level: string, idx: number, seed: number): Exercise[] => {
+  const { unit, review: isRev, lesson } = lessonInfo(level, idx)
+  return isRev ? review(level, unit, seed) : contentLesson(level, lesson!, idx % 5, seed)
 }
 
 export const bar = (n: number, of: number, width = 12) => {
-  const full = of === 0 ? 0 : Math.round((n / of) * width)
+  const full = of === 0 ? 0 : Math.min(width, Math.round((n / of) * width))
   return '█'.repeat(full) + '░'.repeat(width - full)
 }
 
