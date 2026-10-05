@@ -542,11 +542,7 @@ export const register: Register = on => {
             </Text>
             {!ok && answerText !== '' && <Text>Correct answer: <Text bold>{answerText}</Text></Text>}
             {s.note !== '' && <Text dimColor>{s.note}</Text>}
-          </Box>
-        )}
-        {answered1 && (
-          <Box borderStyle="round" borderColor={ok ? 'green' : 'red'} paddingX={1}>
-            <Button key="continue" label={isLast ? 'Finish ▶' : 'Continue ▶'} onPress={cont} />
+            <Button key="continue" label={isLast ? '▶ Finish' : '▶ Continue'} onPress={cont} />
           </Box>
         )}
       </Box>
