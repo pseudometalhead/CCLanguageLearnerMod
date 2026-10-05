@@ -6,6 +6,7 @@ Type `/learn` in Claude Code. **German, A1 → C1**, 20 lessons per level (100 i
 - Five levels (A1 Beginner … C1 Advanced), each with **4 units × 5 nodes**: four lessons and a 🏆 unit review.
 - A winding path of nodes: ▶️ start, 🔒 locked, ⭐ done (1 to 3 stars by hearts left), 👑 reviewed unit.
 - Know a level already? Take the **placement quiz** (12 questions on the level below, two mistakes allowed) to unlock it.
+- **💪 Practice:** a 10-puzzle mix drawn from the lessons you have finished (flat 5 XP, no stars).
 - Streak 🔥, XP ⭐ and a daily goal 🎯 of 30 XP.
 
 ## A lesson
@@ -19,7 +20,7 @@ Type `/learn` in Claude Code. **German, A1 → C1**, 20 lessons per level (100 i
 
 ## Keyboard
 With the pane focused: **1–4** pick an option, **1–9** tap a word chip, **1–5** and **q–t** match pairs, **c** check / continue,
-**u** undo, **p** play the audio, **s** start, **n** next lesson, **r** try again, **m** back to the map.
+**u** undo, **p** play the audio, **s** start, **x** practice, **n** next lesson, **r** try again, **m** back to the map.
 
 ## Audio
 German is spoken with the system speech synthesizer (voice **Anna**), so real playback needs **macOS** with that voice

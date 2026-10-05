@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { buildLesson, buildTest, lessonInfo, LESSONS_PER_LEVEL, tokens, unitIndex } from './engine'
+import { buildLesson, buildPractice, buildTest, lessonInfo, LESSONS_PER_LEVEL, tokens, unitIndex } from './engine'
 import { LEVELS, UNITS } from './lessons'
 
 const allLessons = () => LEVELS.flatMap(lv => UNITS[lv].flatMap(u => u.lessons.map(l => ({ lv, l }))))
@@ -137,6 +137,16 @@ test('fill-the-gap never offers a word from the sentence’s own unit as a wrong
           for (const o of e.options) if (o !== e.answer) expect([lv, idx, o, theme.has(o.toLowerCase())]).toEqual([lv, idx, o, false])
         }
       }
+    }
+  }
+})
+
+test('practice mixes whatever lessons are finished, even just one', () => {
+  for (const lv of LEVELS) {
+    for (const done of [[0], [0, 1], [0, 1, 2, 3, 4, 5]]) {
+      const ex = buildPractice(lv, done, 5)
+      expect(ex.length).toBeGreaterThanOrEqual(9)
+      for (const e of ex) check(e, `practice ${lv} ${done.length}`)
     }
   }
 })

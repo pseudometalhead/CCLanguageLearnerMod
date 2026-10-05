@@ -239,6 +239,30 @@ const review = (level: string, unit: Unit, seed: number): Exercise[] => {
   ])
 }
 
+/** Ten mixed puzzles on whichever lessons the learner has finished. */
+export const buildPractice = (level: Level, done: number[], seed: number): Exercise[] => {
+  const lessons = done.filter(i => !isReview(i)).map(i => lessonInfo(level, i).lesson!)
+  const c = (n: number): Ctx => ({ level, seed: seed + n * 7 })
+  const words = shuffle(lessons.flatMap(l => l.words), seed)
+  const sents = shuffle(lessons.flatMap(l => [...l.sentences]), seed + 1)
+  const gaps = sents.filter(hasGap)
+  const nouns = words.filter(x => hasArticle(x[0]))
+  const w = (n: number) => words[n % words.length]
+  const sn = (n: number) => sents[n % sents.length]
+  return compact([
+    chooseDe(c(1), w(0)),
+    chooseEn(c(2), w(1)),
+    match(c(3), words.slice(0, 5)),
+    listenWord(c(4), w(5)),
+    nouns[0] ? article(c(5), nouns[0]) : chooseEn(c(5), w(6)),
+    cloze(c(6), gaps[0]),
+    translateChoice(c(7), sn(0), false),
+    buildEnDe(c(8), sn(1), 1),
+    translateChoice(c(9), sn(2), true),
+    chooseDe(c(10), w(7)),
+  ])
+}
+
 /** The placement quiz that opens `level` by testing the one below it. */
 export const buildTest = (level: Level, seed: number): Exercise[] => {
   const src = LEVELS[Math.max(0, LEVELS.indexOf(level) - 1)]

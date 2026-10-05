@@ -1,7 +1,7 @@
 import { expect, mock, test } from 'claude-code/testing'
 
 import type { Exercise } from '../types'
-import { buildLesson, buildTest } from './engine'
+import { buildLesson, buildPractice, buildTest } from './engine'
 
 const NOW = 1_700_000_000_000
 const SEED = NOW % 1_000_003
@@ -288,5 +288,30 @@ test('a mistake comes back once at the end of the lesson, and earns no XP the se
   expect(await ui.find({ text: /LESSON COMPLETE/ })).toBeDefined()
   expect(await ui.find({ text: new RegExp(`${ex.length - 1}/${ex.length} first try`) })).toBeDefined()
   expect(await ui.find({ text: /⭐⭐☆/ })).toBeDefined()
+  await ui.unmount()
+})
+
+test('practice appears after the first finished lesson, pays 5 XP and leaves the stars alone', async ($, on) => {
+  world(on)
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  expect(await ui.find({ text: /Practice/ })).toBeUndefined()
+  await playLesson(ui, 'A1', 0)
+  await ui.press({ key: 'map' })
+  expect(await ui.find({ text: /Practice · mixed review/ })).toBeDefined()
+  await ui.press({ key: 'practice' })
+  expect(await ui.find({ text: /PRACTICE · A1/ })).toBeDefined()
+  await ui.press({ key: 'start' })
+  const ex = buildPractice('A1', [0], SEED)
+  for (const x of ex) {
+    await solve(ui, x)
+    await ui.press({ key: 'continue' })
+  }
+  expect(await ui.find({ text: /PRACTICE COMPLETE/ })).toBeDefined()
+  expect(await ui.find({ text: /\+5 XP/ })).toBeDefined()
+  expect(await ui.find({ text: /Next:/ })).toBeUndefined()
+  await ui.press({ key: 'map' })
+  // lesson 2 is still the next one to play, and lesson 1 keeps its stars
+  expect(await ui.find({ text: /START/ })).toBeDefined()
+  expect(await ui.find({ text: /★★★/ })).toBeDefined()
   await ui.unmount()
 })
