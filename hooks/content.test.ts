@@ -1,6 +1,6 @@
 import { expect, test } from 'claude-code/testing'
 
-import { buildLesson, buildTest, lessonInfo, LESSONS_PER_LEVEL, tokens } from './engine'
+import { buildLesson, buildTest, lessonInfo, LESSONS_PER_LEVEL, tokens, unitIndex } from './engine'
 import { LEVELS, UNITS } from './lessons'
 
 const allLessons = () => LEVELS.flatMap(lv => UNITS[lv].flatMap(u => u.lessons.map(l => ({ lv, l }))))
@@ -121,6 +121,20 @@ test('options look alike: a noun answer is never given away by bare-word distrac
         }
         if (e.kind === 'choice' && e.title === 'Select the correct meaning' && e.answer.startsWith('to ')) {
           expect(e.options.every(o => o.startsWith('to '))).toBe(true)
+        }
+      }
+    }
+  }
+})
+
+test('fill-the-gap never offers a word from the sentence’s own unit as a wrong option', () => {
+  for (const lv of LEVELS) {
+    for (let idx = 0; idx < LESSONS_PER_LEVEL; idx++) {
+      const theme = new Set(UNITS[lv][unitIndex(idx)].lessons.flatMap(l => l.words.map(w => w[0].replace(/^(der|die|das) /, '').toLowerCase())))
+      for (const seed of [1, 99]) {
+        for (const e of buildLesson(lv, idx, seed)) {
+          if (e.kind !== 'choice' || e.title !== 'Fill in the missing word') continue
+          for (const o of e.options) if (o !== e.answer) expect([lv, idx, o, theme.has(o.toLowerCase())]).toEqual([lv, idx, o, false])
         }
       }
     }

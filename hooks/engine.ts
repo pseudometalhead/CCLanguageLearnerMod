@@ -109,13 +109,19 @@ const cloze = ({ level, seed }: Ctx, [t, e]: Pair): Exercise => {
   const multi = answer.includes(' ')
   const atStart = t.startsWith('[')
   const cap = isCap(answer)
+  // Words from the sentence's own unit are off limits as wrong options: "Wasser" and "Milch" both fit "ein Glas ＿＿＿".
+  const theme = new Set(wordsOf(UNITS[level].filter(u => sentencesOf([u]).some(p => p[0] === t))).map(w => stripArt(w[0]).toLowerCase()))
+  const fresh = (w: string) => !theme.has(w.toLowerCase()) && w.toLowerCase() !== answer.toLowerCase()
   const pool = unique(levelWords(level).map(w => stripArt(w[0]))).filter(w => w.includes(' ') === multi)
   const more = unique(courseWords.map(w => stripArt(w[0]))).filter(w => w.includes(' ') === multi)
   const same = (list: string[]) => (atStart ? list : list.filter(w => isCap(w) === cap))
-  const near = shuffle(same(pool).filter(w => w.toLowerCase() !== answer.toLowerCase()), seed)
-  const far = shuffle(same(more).filter(w => w.toLowerCase() !== answer.toLowerCase() && !near.includes(w)), seed + 5)
+  const near = shuffle(same(pool).filter(fresh), seed)
+  const far = shuffle(same(more).filter(w => fresh(w) && !near.includes(w)), seed + 5)
   const fix = atStart ? (w: string) => w.charAt(0).toUpperCase() + w.slice(1) : (w: string) => w
-  const wrong = [...near, ...far].slice(0, 3).map(fix)
+  // Idiom blanks may find too few look-alikes: relax capitalisation, then phrase length.
+  const spare = shuffle(more.filter(w => fresh(w) && !near.includes(w) && !far.includes(w)), seed + 6)
+  const anyWord = shuffle(unique(courseWords.map(w => stripArt(w[0]))).filter(w => fresh(w) && !near.includes(w) && !far.includes(w) && !spare.includes(w)), seed + 7)
+  const wrong = [...near, ...far, ...spare, ...anyWord].slice(0, 3).map(fix)
   return {
     kind: 'choice',
     title: 'Fill in the missing word',
