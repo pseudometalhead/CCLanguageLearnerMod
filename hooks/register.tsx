@@ -79,6 +79,8 @@ const nextTarget = (a: App): [Level, number] | null => {
 
 // ---- scoring ------------------------------------------------------------------------------
 const right = (a: App): App => {
+  // A repeat of an earlier mistake earns nothing and does not count towards the combo.
+  if (a.ex[a.i].again) return { ...a, status: 'right', gain: 0 }
   const first = !a.slip
   const combo = first ? a.combo + 1 : 0
   const gain = first ? 2 + (combo >= 3 ? 1 : 0) : 0
@@ -226,8 +228,10 @@ export const register: Register = on => {
     const cont = async () => {
       const cur = await read($, app)
       if (cur.status === 'idle') return
-      if (cur.hearts > 0 && cur.i + 1 < cur.ex.length) {
-        await update($, app, a => ({ ...a, ...fresh, i: a.i + 1 }))
+      // Duolingo-style: a mistake comes back once at the end of the lesson.
+      const missed = cur.status === 'wrong' && !cur.ex[cur.i].again && cur.hearts > 0
+      if (cur.hearts > 0 && (cur.i + 1 < cur.ex.length || missed)) {
+        await update($, app, a => ({ ...a, ...fresh, ex: missed ? [...a.ex, { ...a.ex[a.i], again: true }] : a.ex, i: a.i + 1 }))
         await opened()
         return
       }
@@ -415,7 +419,7 @@ export const register: Register = on => {
               {s.passed ? (isTest ? '🚀 LEVEL UNLOCKED' : '🏆 LESSON COMPLETE') : isTest ? '😕 NOT QUITE, TRY AGAIN' : '💔 OUT OF HEARTS'}
             </Text>
             {!isTest && <Text>{'⭐'.repeat(s.lastStars)}{'☆'.repeat(3 - s.lastStars)}</Text>}
-            <Text>🎯 {s.correct}/{s.ex.length} first try   ⭐ +{s.gained} XP   🔥 best combo {s.best}</Text>
+            <Text>🎯 {s.correct}/{s.ex.filter(q => !q.again).length} first try   ⭐ +{s.gained} XP   🔥 best combo {s.best}</Text>
             <Text dimColor>Daily goal {goal}/{GOAL} <Text color="green">{bar(goal, GOAL, 10)}</Text>{goal >= GOAL ? ' ✅' : ''}</Text>
           </Box>
           {target && (
@@ -439,7 +443,7 @@ export const register: Register = on => {
     const answered1 = s.status !== 'idle'
     const ok = s.status === 'right'
     const answerText = x.kind === 'match' ? '' : x.answer
-    const isLast = s.i + 1 >= s.ex.length || s.hearts <= 0
+    const isLast = (s.i + 1 >= s.ex.length && !(s.status === 'wrong' && !x.again)) || s.hearts <= 0
     const shortOpts = x.kind === 'choice' && x.options.every(o => o.length <= 18)
 
     let body
@@ -531,7 +535,7 @@ export const register: Register = on => {
           <Text>  {heartsRow(s.hearts, MAX_HEARTS)} </Text>
           <Button key="sound" label={s.sound ? '🔊' : '🔇'} onPress={() => update($, app, a => ({ ...a, sound: !a.sound }))} />
         </Box>
-        <Text bold color="magenta">{x.title}</Text>
+        <Text bold color="magenta">{x.again ? '↻ Try again: ' : ''}{x.title}</Text>
         {body}
         {!answered1 && s.note && <Text color="red">{s.note}</Text>}
         {answered1 && (

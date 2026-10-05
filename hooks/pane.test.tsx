@@ -264,3 +264,29 @@ test('the placement quiz unlocks a level without finishing the one below', async
   expect(await ui.find({ text: /LESSON 1 · Connectors/ })).toBeDefined()
   await ui.unmount()
 })
+
+test('a mistake comes back once at the end of the lesson, and earns no XP the second time', async ($, on) => {
+  world(on)
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  await ui.press({ key: 'node-0' })
+  await ui.press({ key: 'start' })
+  const ex = buildLesson('A1', 0, SEED)
+  expect(ex[0].kind).toBe('choice')
+  await blunder(ui, ex[0])
+  await ui.press({ key: 'continue' })
+  for (const x of ex.slice(1)) {
+    await solve(ui, x)
+    await ui.press({ key: 'continue' })
+  }
+  // the missed exercise is asked again
+  expect(await ui.find({ text: /Try again: / })).toBeDefined()
+  expect(await ui.find({ text: /LESSON COMPLETE/ })).toBeUndefined()
+  await solve(ui, ex[0])
+  expect(await ui.find({ text: /Super!|Prima!|Genau!|Sehr gut!|Toll!|Perfekt!|Klasse!/ })).toBeDefined()
+  expect(await ui.find({ text: /\+2 XP|\+3 XP/ })).toBeUndefined()
+  await ui.press({ key: 'continue' })
+  expect(await ui.find({ text: /LESSON COMPLETE/ })).toBeDefined()
+  expect(await ui.find({ text: new RegExp(`${ex.length - 1}/${ex.length} first try`) })).toBeDefined()
+  expect(await ui.find({ text: /⭐⭐☆/ })).toBeDefined()
+  await ui.unmount()
+})

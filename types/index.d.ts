@@ -4,6 +4,8 @@ export type Exercise =
   | {
       kind: 'choice'
       title: string
+      /** A repeat of an exercise answered wrongly, queued at the end of the lesson. */
+      again?: boolean
       prompt: string
       context?: string
       answer: string
@@ -15,9 +17,9 @@ export type Exercise =
       /** German text spoken once the exercise is answered. */
       after?: string
     }
-  | { kind: 'match'; title: string; left: string[]; right: string[]; pairs: Record<string, string> }
-  | { kind: 'spell'; title: string; prompt: string; answer: string; bank: string[]; say?: string; auto?: boolean; after?: string }
-  | { kind: 'build'; title: string; prompt: string; answer: string; bank: string[]; say?: string; auto?: boolean; after?: string }
+  | { kind: 'match'; title: string; again?: boolean; left: string[]; right: string[]; pairs: Record<string, string> }
+  | { kind: 'spell'; title: string; again?: boolean; prompt: string; answer: string; bank: string[]; say?: string; auto?: boolean; after?: string }
+  | { kind: 'build'; title: string; again?: boolean; prompt: string; answer: string; bank: string[]; say?: string; auto?: boolean; after?: string }
 
 export type App = {
   screen: 'home' | 'intro' | 'play' | 'result'
