@@ -25,7 +25,9 @@ test('every generated exercise is solvable and well formed', () => {
       for (let idx = 0; idx < 2; idx++) {
         for (const seed of [1, 42, 9999]) {
           const ex = buildLesson(lang, lv, idx, seed)
-          expect(ex.length).toBe(7)
+          expect(ex.length).toBe(9)
+          expect(ex.filter(e => e.kind === 'choice' && e.auto).length).toBe(2)
+          for (const e of ex) if (e.kind === 'choice' && e.auto) expect(e.say).toBeTruthy()
           expect(new Set(ex.map(e => e.kind)).size).toBeGreaterThanOrEqual(3)
           for (const e of ex) {
             if (e.kind === 'choice') {

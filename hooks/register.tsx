@@ -29,6 +29,7 @@ const initial: App = {
   i: 0,
   ...fresh,
   hearts: MAX_HEARTS,
+  sound: true,
   xp: 0,
   streak: 0,
   lastDay: 0,
@@ -56,6 +57,7 @@ export const register: Register = on => {
         ...initial,
         lang: saved.lang && COURSES[saved.lang] ? saved.lang : initial.lang,
         xp: saved.xp ?? 0,
+        sound: saved.sound ?? true,
         lastDay: saved.lastDay ?? 0,
         done: saved.done ?? {},
         streak,
@@ -75,6 +77,29 @@ export const register: Register = on => {
     const info = LEVEL_INFO[s.level]
     const x = s.ex[s.i]
 
+    // ---- audio ------------------------------------------------------------
+    const say = async (text: string) => {
+      try {
+        await $.audio.speak(text, { voice: 'Anna' })
+      } catch {
+        await update($, app, a => ({ ...a, note: `🔇 No audio here (needs macOS + German voice "Anna"). It says: “${text}”` }))
+      }
+    }
+    // Speaks what the exercise now showing asks to hear when it opens.
+    const opened = async () => {
+      const a = await read($, app)
+      const q = a.ex[a.i]
+      if (a.sound && q && q.kind === 'choice' && q.auto && q.say) await say(q.say)
+    }
+    // Runs an answer; once it settles the exercise, speaks the German text it carries.
+    const answered = async (run: () => Promise<unknown>) => {
+      const before = await read($, app)
+      await run()
+      const a = await read($, app)
+      const q = a.ex[a.i]
+      if (before.status === 'idle' && a.status !== 'idle' && a.sound && q && q.kind !== 'match' && q.after) await say(q.after)
+    }
+
     // ---- actions ----------------------------------------------------------
     const start = async (level: Level, idx: number) => {
       const seed = (await $.clock.now()) % 1_000_003
@@ -90,6 +115,7 @@ export const register: Register = on => {
         hearts: MAX_HEARTS,
         ex: buildLesson(a.lang, level, idx, seed),
       }))
+      await opened()
     }
 
     const right = (a: App): App => ({
@@ -102,17 +128,17 @@ export const register: Register = on => {
     const wrong = (a: App): App => ({ ...a, status: 'wrong', hearts: a.hearts - 1 })
 
     const pick = (opt: string) =>
-      update($, app, a => {
+      answered(() => update($, app, a => {
         const q = a.ex[a.i]
         if (a.status !== 'idle' || q.kind !== 'choice') return a
         return { ...(opt === q.answer ? right(a) : wrong(a)), picked: opt }
-      })
+      }))
 
     const tapLeft = (t: string) =>
       update($, app, a => (a.status === 'idle' && !a.matched.includes(t) ? { ...a, sel: t, note: '' } : a))
 
     const tapRight = (r: string) =>
-      update($, app, a => {
+      answered(() => update($, app, a => {
         const q = a.ex[a.i]
         if (a.status !== 'idle' || q.kind !== 'match') return a
         if (a.sel === null) return { ...a, note: 'Pick a word on the left first' }
@@ -123,24 +149,25 @@ export const register: Register = on => {
         }
         const hit = { ...a, sel: null, slip: true, note: 'Not a match, try again', hearts: a.hearts - 1 }
         return hit.hearts <= 0 ? { ...hit, status: 'wrong' as const } : hit
-      })
+      }))
 
     const tapBank = (idx: number) =>
       update($, app, a => (a.status === 'idle' && !a.used.includes(idx) ? { ...a, used: [...a.used, idx] } : a))
     const undo = () => update($, app, a => (a.status === 'idle' ? { ...a, used: a.used.slice(0, -1) } : a))
     const check = () =>
-      update($, app, a => {
+      answered(() => update($, app, a => {
         const q = a.ex[a.i]
         if (a.status !== 'idle' || (q.kind !== 'spell' && q.kind !== 'build')) return a
         const got = a.used.map(k => q.bank[k]).join(q.kind === 'spell' ? '' : ' ')
         return got === q.answer ? right(a) : wrong(a)
-      })
+      }))
 
     const cont = async () => {
       const cur = await read($, app)
       if (cur.status === 'idle') return
       if (cur.hearts > 0 && cur.i + 1 < cur.ex.length) {
         await update($, app, a => ({ ...a, ...fresh, i: a.i + 1 }))
+        await opened()
         return
       }
       const today = Math.floor((await $.clock.now()) / DAY)
@@ -161,7 +188,7 @@ export const register: Register = on => {
         }
       })
       const after = await read($, app)
-      await $.store.set(STORE, { lang: after.lang, xp: after.xp, streak: after.streak, lastDay: after.lastDay, done: after.done })
+      await $.store.set(STORE, { lang: after.lang, sound: after.sound, xp: after.xp, streak: after.streak, lastDay: after.lastDay, done: after.done })
       if (after.hearts > 0 && doneIn(after, after.level) >= COURSES[after.lang][after.level].length) {
         $.ui.toast(`🎉 ${after.level} ${LEVEL_INFO[after.level].name} complete!`)
       }
@@ -171,7 +198,10 @@ export const register: Register = on => {
     const header = (
       <Box borderStyle="round" borderColor="cyan" paddingX={1} flexDirection="column">
         <Text bold color="cyan">🌍 LinguaCC <Text dimColor>· {s.lang}</Text></Text>
-        <Text>🔥 {s.streak}   ⭐ {s.xp} XP{s.screen === 'play' ? `   ${heartsRow(s.hearts, MAX_HEARTS)}` : ''}</Text>
+        <Box>
+          <Text>🔥 {s.streak}   ⭐ {s.xp} XP{s.screen === 'play' ? `   ${heartsRow(s.hearts, MAX_HEARTS)}` : ''}   </Text>
+          <Button key="sound" label={s.sound ? '🔊 on' : '🔇 off'} onPress={() => update($, app, a => ({ ...a, sound: !a.sound }))} />
+        </Box>
       </Box>
     )
 
@@ -238,7 +268,7 @@ export const register: Register = on => {
 
     // ---- play -------------------------------------------------------------
     const badge =
-      x.kind === 'choice' ? (x.context ? '✏️  FILL THE GAP' : '🎯 CHOOSE') : x.kind === 'match' ? '🧩 MATCH THE PAIRS' : x.kind === 'spell' ? '🔤 SPELL IT' : '🏗️  BUILD THE SENTENCE'
+      x.kind === 'choice' ? (x.auto ? '🎧 LISTEN' : x.context ? '✏️  FILL THE GAP' : '🎯 CHOOSE') : x.kind === 'match' ? '🧩 MATCH THE PAIRS' : x.kind === 'spell' ? '🔤 SPELL IT' : '🏗️  BUILD THE SENTENCE'
     const lesson = COURSES[s.lang][s.level][s.lesson]
 
     let body
@@ -247,6 +277,7 @@ export const register: Register = on => {
         <Box flexDirection="column">
           <Text bold>{x.prompt}</Text>
           {x.context && <Text color="yellow">{x.context}</Text>}
+          {x.say && <Button key="play" label="🔊 Play" onPress={() => say(x.say as string)} />}
           {x.options.map(o => {
             const mark = s.picked === null ? '○' : o === x.answer ? '✅' : o === s.picked ? '❌' : '○'
             return <Button key={`opt-${o}`} label={`${mark} ${o}`} onPress={() => pick(o)} />
@@ -305,6 +336,7 @@ export const register: Register = on => {
         </Text>
         <Text bold color="magenta">{badge}</Text>
         {body}
+        {s.note && x.kind !== 'match' && <Text color="red">{s.note}</Text>}
         {s.status !== 'idle' && (
           <Box borderStyle="round" borderColor={s.status === 'right' ? 'green' : 'red'} paddingX={1} flexDirection="column">
             <Text bold color={s.status === 'right' ? 'green' : 'red'}>

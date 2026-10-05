@@ -37,6 +37,8 @@ const choice = (lang: string, level: string, [t, e]: Pair, toEnglish: boolean, s
   return {
     kind: 'choice',
     prompt: toEnglish ? `What does “${t}” mean?` : `How do you say “${e}” in ${lang}?`,
+    say: toEnglish ? t : undefined,
+    after: toEnglish ? undefined : t,
     answer,
     options: shuffle([answer, ...distract(lang, level, answer, toEnglish ? 1 : 0, seed)], seed + 3),
   }
@@ -44,7 +46,7 @@ const choice = (lang: string, level: string, [t, e]: Pair, toEnglish: boolean, s
 
 const spell = ([t, e]: Pair, seed: number): Exercise => {
   const letters = [...t.replace(/ /g, '')]
-  return { kind: 'spell', prompt: `Spell “${e}”`, answer: letters.join(''), bank: differs(letters, seed, a => a.join('') === letters.join('')) }
+  return { kind: 'spell', prompt: `Spell “${e}”`, after: t, answer: letters.join(''), bank: differs(letters, seed, a => a.join('') === letters.join('')) }
 }
 
 const cloze = (lang: string, level: string, [t, e]: Pair, seed: number): Exercise => {
@@ -55,6 +57,7 @@ const cloze = (lang: string, level: string, [t, e]: Pair, seed: number): Exercis
   return {
     kind: 'choice',
     prompt: 'Fill in the blank',
+    after: t.replace(/[[\]]/g, ''),
     context: `${t.replace(/\[.+?\]/, '＿＿＿＿')}\n${e}`,
     answer,
     options: shuffle([answer, ...distract(lang, level, answer, 0, seed).map(cap)], seed + 9),
@@ -63,7 +66,23 @@ const cloze = (lang: string, level: string, [t, e]: Pair, seed: number): Exercis
 
 const build = ([t, e]: Pair, seed: number): Exercise => {
   const words = t.replace(/[[\]]/g, '').split(' ')
-  return { kind: 'build', prompt: e, answer: words.join(' '), bank: differs(words, seed, a => a.join(' ') === words.join(' ')) }
+  return { kind: 'build', prompt: e, after: words.join(' '), answer: words.join(' '), bank: differs(words, seed, a => a.join(' ') === words.join(' ')) }
+}
+
+const listen = (lang: string, level: string, [t, e]: Pair, seed: number, sentence: boolean): Exercise => {
+  const say = t.replace(/[[\]]/g, '')
+  const pool = sentence
+    ? COURSES[lang][level].flatMap(l => l.sentences.map(p => p[1]))
+    : COURSES[lang][level].flatMap(l => l.words.map(w => w[1]))
+  const wrong = shuffle([...new Set(pool)].filter(w => w !== e), seed).slice(0, 3)
+  return {
+    kind: 'choice',
+    prompt: sentence ? 'What does the sentence mean?' : 'What did you hear?',
+    say,
+    auto: true,
+    answer: e,
+    options: shuffle([e, ...wrong], seed + 11),
+  }
 }
 
 const match = (lesson: Pair[], seed: number): Exercise => ({
@@ -82,9 +101,11 @@ export const buildLesson = (lang: string, level: string, idx: number, seed: numb
     match(w, seed + 1),
     short[0] ? spell(short[0], seed + 2) : choice(lang, level, w[1], false, seed + 2),
     cloze(lang, level, l.sentences[0], seed + 3),
-    choice(lang, level, w[2], false, seed + 4),
-    build(l.sentences[1], seed + 5),
-    short[1] ? spell(short[1], seed + 6) : choice(lang, level, w[3], true, seed + 6),
+    listen(lang, level, w[4], seed + 4, false),
+    choice(lang, level, w[2], false, seed + 5),
+    build(l.sentences[1], seed + 6),
+    listen(lang, level, l.sentences[1], seed + 7, true),
+    short[1] ? spell(short[1], seed + 8) : choice(lang, level, w[3], true, seed + 8),
   ]
   return out
 }
