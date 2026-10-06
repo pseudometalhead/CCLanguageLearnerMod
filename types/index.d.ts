@@ -10,11 +10,11 @@ export type Exercise =
       context?: string
       answer: string
       options: string[]
-      /** German text a 🔊 button speaks while the exercise is open. */
+      /** Text in the language being learned that a 🔊 button speaks while the exercise is open. */
       say?: string
       /** Speak `say` as soon as the exercise opens (a listening puzzle). */
       auto?: boolean
-      /** German text spoken once the exercise is answered. */
+      /** Text in the language being learned, spoken once the exercise is answered. */
       after?: string
     }
   | { kind: 'match'; title: string; again?: boolean; left: string[]; right: string[]; pairs: Record<string, string> }
