@@ -64,6 +64,17 @@ Every word and sentence is spoken.
 
 To rebuild the clips after changing a course (needs `espeak-ng`, `mbrola` voices and `ffmpeg`): `npx tsx scripts/make-audio.ts` (only new words are made; `--check` lists words without a clip).
 
+### Better voices with Azure Speech (optional)
+`scripts/make-audio-azure.ts` makes the same clips with Azure Speech neural voices (German Katja, French Denise) in about 11 MB, with the same file names, so they can replace the espeak clips. It needs an Azure Speech resource (the free F0 tier is enough). Put the key and region in your environment, never in the repo:
+
+    $env:AZURE_SPEECH_KEY = '...'
+    $env:AZURE_SPEECH_REGION = 'westeurope'
+    npx tsx scripts/make-audio-azure.ts --dry          # counts clips and characters, no key needed
+    npx tsx scripts/make-audio-azure.ts --limit 20     # 20 clips into audio-azure/ to listen to first
+    npx tsx scripts/make-audio-azure.ts                # every clip into audio-azure/
+
+Listen with the **Audio test**, then copy `audio-azure/<code>/` over `audio/<code>/` and commit.
+
 ## Install (plug and play)
 
 In Claude Code:
