@@ -4,6 +4,16 @@ Type `/babel-learning` in Claude Code (`/learn` also works). **German and French
 
 It runs as a pane next to your conversation. It works in the Claude desktop app and in the terminal; the desktop pane gets the full design described below, and the terminal keeps a compact text version.
 
+## Screenshots
+
+<table>
+  <tr>
+    <td align="center"><img src="docs/map-a1.png" width="280" alt="The A1 map in lime green: header, level pills, unit banner and lessons"><br><sub>A1: the map in lime</sub></td>
+    <td align="center"><img src="docs/map-b2.png" width="280" alt="The B2 map in bubblegum pink, with its levels still locked"><br><sub>B2: every level has its own colour</sub></td>
+    <td align="center"><img src="docs/question.png" width="280" alt="A multiple-choice question with numbered answer buttons"><br><sub>A question: press 1 to 4, or p to hear it again</sub></td>
+  </tr>
+</table>
+
 ## The map
 - Five levels (A1 Beginner … C1 Advanced), each with **4 units × 5 lessons**: four lessons and a unit review.
 - Each lesson is a card: a button, its title, and either `START`, its stars (1 to 3, by hearts left) or `locked`. Lessons unlock in order. A unit review closes every unit.
