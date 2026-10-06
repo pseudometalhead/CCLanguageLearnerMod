@@ -497,10 +497,14 @@ test('on a desktop the pane asks for the keys back right after a press and again
   await ui.unmount()
 })
 
-test('the desktop pane draws its yellow Duolingo look on every screen', async ($, on) => {
+test('the desktop pane draws every level in its own theme and every screen', async ($, on) => {
   world(on)
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
-  expect(await ui.find({ text: /UNIT 1/ })).toBeDefined()
+  for (const lv of ['A1', 'A2', 'B1', 'B2', 'C1']) {
+    await ui.press({ key: `tab-${lv}` })
+    expect(await ui.find({ text: new RegExp(`${lv} · `) })).toBeDefined()
+  }
+  await ui.press({ key: 'tab-A1' })
   await ui.press({ key: 'check-new' })
   expect(await ui.find({ text: /Find your level|Level check|Placement|Check/i })).toBeDefined()
   await ui.press({ key: 'start' })
