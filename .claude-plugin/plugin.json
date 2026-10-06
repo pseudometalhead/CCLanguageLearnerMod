@@ -1,10 +1,10 @@
 {
   "name": "language-learner",
-  "version": "0.5.0",
-  "description": "Babel Learning: a Duolingo-style German course in a Claude Code pane: CEFR A1 to C1, 100 lessons, a winding map, a dozen puzzle types, audio, XP, hearts and streaks. Type /babel-learning.",
+  "version": "0.6.0",
+  "description": "Babel Learning: a Duolingo-style German and French course in a Claude Code pane: CEFR A1 to C1, 100 lessons per language, a winding map, a dozen puzzle types, audio (recorded clips on Windows), XP, hearts and streaks. Type /babel-learning.",
   "author": { "name": "pseudometalhead", "url": "https://github.com/pseudometalhead" },
   "homepage": "https://github.com/pseudometalhead/CCLanguageLearnerMod",
   "repository": "https://github.com/pseudometalhead/CCLanguageLearnerMod",
-  "keywords": ["german", "language-learning", "education", "duolingo"],
+  "keywords": ["german", "french", "language-learning", "education", "duolingo"],
   "types": "./types/index.d.ts"
 }

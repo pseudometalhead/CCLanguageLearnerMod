@@ -234,7 +234,7 @@ test('audio: listening puzzles autoplay German, Play repeats, the toggle mutes',
   await ui.unmount()
 })
 
-test('audio failure falls back to showing the German text', async ($, on) => {
+test('audio failure falls back to showing the text', async ($, on) => {
   mock.clock(on, { now: NOW })
   mock.store(on)
   on('audio.speak', async () => {
@@ -480,6 +480,33 @@ test('after each press the pane asks for the keys back', async ($, on) => {
   await ui.press({ key: 'continue' })
   expect(asked.length).toBeGreaterThanOrEqual(4)
   expect(asked.every(Boolean)).toBe(true)
+  await ui.unmount()
+})
+
+test('the language switcher moves between German and French, each with its own map and audio clips', async ($, on) => {
+  mock.clock(on, { now: NOW })
+  mock.store(on)
+  on('ui.toast', async () => ({ value: undefined }))
+  const clips: string[] = []
+  on('audio.speak', async () => {
+    throw new Error('$.audio.speak: no speech synthesizer on windows')
+  })
+  on('audio.play', async (_$: any, e: any) => {
+    clips.push(e.clip.asset)
+    return { value: undefined }
+  })
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  expect(await ui.find({ text: /UNIT 1 · 👋 Hallo!/ })).toBeDefined()
+  await ui.press({ key: 'lang-fr' })
+  expect(await ui.find({ text: /UNIT 1 · 👋 Bonjour !/ })).toBeDefined()
+  expect(await ui.find({ text: /Hallo!/ })).toBeUndefined()
+  await ui.press({ key: 'node-0' })
+  await ui.press({ key: 'w-0' })
+  expect(clips[0]).toMatch(/^audio\/fr\/[0-9a-f]{16}\.mp3$/)
+  await ui.press({ key: 'm' }).catch(() => undefined)
+  await ui.press({ key: 'back' })
+  await ui.press({ key: 'lang-de' })
+  expect(await ui.find({ text: /UNIT 1 · 👋 Hallo!/ })).toBeDefined()
   await ui.unmount()
 })
 

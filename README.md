@@ -1,6 +1,6 @@
 # Babel Learning — a Duolingo-style language course for Claude Code
 
-Type `/babel-learning` in Claude Code (`/learn` also works). **German, A1 → C1**, 20 lessons per level (100 in all).
+Type `/babel-learning` in Claude Code (`/learn` also works). **German and French, A1 → C1**, 20 lessons per level (100 per language). Pick the language with the 🇩🇪/🇫🇷 buttons on the map.
 
 ## The map
 - Five levels (A1 Beginner … C1 Advanced), each with **4 units × 5 nodes**: four lessons and a 🏆 unit review.
@@ -31,9 +31,8 @@ The pane opens focused. If the keys do nothing (you pressed Escape, or clicked b
 **Enter** acts on the highlighted button (Start, Check, Continue, Next); Tab or the arrows move the highlight. **u** undo, **p** play the audio, **s** start, **x** practice, **w** words, **l** level check, **n** next lesson, **r** try again, **m** back to the map.
 
 ## Audio
-Every word and sentence is spoken. On macOS it uses the system voice (German **Anna**). Claude Code has **no speech
-synthesizer on Windows or Linux**, so there the app plays **recorded clips** that ship in `audio/<course>/` (559 for
-German, made with espeak-ng's MBROLA voice and ffmpeg: clear, but robotic, not a native speaker). If neither works, the
+Every word and sentence is spoken. On macOS it uses the system voice (German **Anna**, French **Thomas**/**Amelie**). Claude Code has **no speech
+synthesizer on Windows or Linux**, so there the app plays **recorded clips** that ship in `audio/<course>/` (about 560 per language, made with espeak-ng's MBROLA voices and ffmpeg: clear, but robotic, not a native speaker). If neither works, the
 app shows the text instead. The 🔊/🔇 toggle mutes everything.
 
 The map has a **🔧 Audio test** button (hotkey **a**) that tries speech, a recorded clip and a beep, and shows the exact
