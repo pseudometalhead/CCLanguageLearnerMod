@@ -82,6 +82,21 @@ test('the level check places you after the last stage cleared and opens the leve
   expect(levelOpen({ ...b, lang: 'fr' }, 'B1')).toBe(false)
 })
 
+test('after a test every lesson of the levels below the placed one is playable, the placed level starts at its first lesson', () => {
+  const a = base({})
+  const b = { ...a, tested: placedTested(a, 2) } // placed at B1
+  expect(nodeState(b, 'A1', 7)).toBe('current')
+  expect(nodeState(b, 'A2', 13)).toBe('current')
+  expect(nodeState(b, 'B1', 0)).toBe('current')
+  expect(nodeState(b, 'B1', 3)).toBe('locked')
+  expect(nodeState(b, 'B2', 0)).toBe('locked')
+  // stars still win, and another course is unaffected
+  expect(nodeState({ ...b, stars: done('de', 'A1', 1) }, 'A1', 0)).toBe('done')
+  expect(nodeState({ ...b, lang: 'fr' }, 'A1', 7)).toBe('locked')
+  // without a test the lessons stay in order
+  expect(nodeState(a, 'A1', 7)).toBe('locked')
+})
+
 test('Enter always has a button to act on: the primary key follows the screen', () => {
   const a = base({})
   expect(newLearner(a)).toBe(true)

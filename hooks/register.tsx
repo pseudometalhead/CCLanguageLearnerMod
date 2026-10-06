@@ -134,6 +134,8 @@ export const register: Register = on => {
     const TINT: Record<string, string> = { cyan: th.a2, blue: th.a1, green: '#6EE03A', yellow: '#FFD84A', magenta: '#FF8AD0', red: '#FF6B7A', gray: '#9C98A6' }
     const tint = (c?: string) => (desk && c ? (TINT[c] ?? c) : c)
     const ink = desk ? '#F4F1E8' : undefined
+    // A native button is drawn dark and see-through in a dark pane: a light box behind it lifts it (the selected, primary one stays black).
+    const lift = (unselected: boolean, key: string, node: any) => (desk && unselected ? <Box key={key} backgroundColor={th.a2}>{node}</Box> : node)
     const page = (tree: any) =>
       desk ? (
         <Box flexDirection="column" backgroundColor={th.bg} padding={1} minHeight="100%">
@@ -145,7 +147,7 @@ export const register: Register = on => {
     const act = (key: string, label: string, onPress: () => unknown, o: { hotkey?: string; main?: boolean; tone?: string; focus?: boolean; num?: string; end?: boolean; gap?: boolean } = {}) => {
       const framed = !desk || (o.tone !== undefined && o.tone !== 'gray')
       return (
-        <Box key={`act-${key}`} {...(framed ? { borderStyle: 'round' as const, borderColor: o.tone ?? 'gray', paddingX: 1 } : {})} marginRight={o.end ? 0 : 1} marginBottom={o.gap ? 1 : 0}>
+        <Box key={`act-${key}`} {...(framed ? { borderStyle: 'round' as const, borderColor: o.tone ?? 'gray', paddingX: 1 } : desk && !o.main ? { backgroundColor: th.a2 } : {})} marginRight={o.end ? 0 : 1} marginBottom={o.gap ? 1 : 0}>
           <Button
             key={key}
             hotkey={o.hotkey}
@@ -409,7 +411,7 @@ export const register: Register = on => {
       <Box borderStyle="round" borderColor={desk ? th.a1 : 'cyan'} {...(desk ? { backgroundColor: th.card } : {})} paddingX={1} flexDirection="column" marginBottom={desk ? 1 : 0}>
         <Box>
           <Text bold color={desk ? th.a1 : 'cyan'}>🌍 {APP_NAME} <Text color={ink} dimColor>· {course.name} </Text></Text>
-          <Button key="sound" label={s.sound ? '🔊 on' : '🔇 off'} onPress={() => update($, app, a => ({ ...a, sound: !a.sound }))} />
+          {lift(true, 'sound-w', <Button key="sound" label={s.sound ? '🔊 on' : '🔇 off'} onPress={() => update($, app, a => ({ ...a, sound: !a.sound }))} />)}
         </Box>
         <Text color={ink}>🔥 {s.streak}   ⭐ {s.xp}   🎯 {desk ? <Text bold color={th.a2}>{s.dayXp >= GOAL ? 'Daily goal done ✓' : `${s.dayXp}/${GOAL} XP today`}</Text> : <Text>{Math.min(s.dayXp, GOAL)}/{GOAL} <Text color="green">{bar(Math.min(s.dayXp, GOAL), GOAL, 8)}</Text></Text>}</Text>
       </Box>
@@ -441,12 +443,16 @@ export const register: Register = on => {
           {Object.keys(COURSES).length > 1 && (
             <Box marginBottom={1}>
               {Object.values(COURSES).map(c => (
-                <Button
-                  key={`lang-${c.code}`}
-                  variant={desk ? (c.code === s.lang ? 'primary' : 'secondary') : undefined}
-                  label={`${c.code === s.lang ? '●' : '○'} ${c.name}${desk ? '' : '  '}`}
-                  onPress={() => update($, app, a => switchCourse(a, c.code))}
-                />
+                lift(
+                  c.code !== s.lang,
+                  `lang-w-${c.code}`,
+                  <Button
+                    key={`lang-${c.code}`}
+                    variant={desk ? (c.code === s.lang ? 'primary' : 'secondary') : undefined}
+                    label={`${c.code === s.lang ? '●' : '○'} ${c.name}${desk ? '' : '  '}`}
+                    onPress={() => update($, app, a => switchCourse(a, c.code))}
+                  />,
+                )
               ))}
             </Box>
           )}
@@ -461,12 +467,16 @@ export const register: Register = on => {
           )}
           <Box marginBottom={1}>
             {LEVELS.map(lv => (
-              <Button
-                key={`tab-${lv}`}
-                variant={desk ? (lv === s.level ? 'primary' : 'secondary') : undefined}
-                label={`${lv === s.level ? '▣' : levelOpen(s, lv) ? '□' : '🔒'} ${lv}${desk ? '' : '  '}`}
-                onPress={() => goLevel(lv)}
-              />
+              lift(
+                lv !== s.level,
+                `tab-w-${lv}`,
+                <Button
+                  key={`tab-${lv}`}
+                  variant={desk ? (lv === s.level ? 'primary' : 'secondary') : undefined}
+                  label={`${lv === s.level ? '▣' : levelOpen(s, lv) ? '□' : '🔒'} ${lv}${desk ? '' : '  '}`}
+                  onPress={() => goLevel(lv)}
+                />,
+              )
             ))}
           </Box>
           <Text color={tint(lvlc)} bold>{s.level} · {info.name}  {desk ? '' : bar(n, LESSONS_PER_LEVEL, 10)} {n}/{LESSONS_PER_LEVEL}</Text>
@@ -697,7 +707,7 @@ export const register: Register = on => {
           <Box borderStyle="round" borderColor="gray" paddingX={1} marginBottom={1}>
             {x.say && (
               <Box marginRight={1}>
-                <Button key="play" hotkey="p" label="🔊 " onPress={() => say(x.say as string)} />
+                {lift(true, 'play-w', <Button key="play" hotkey="p" label="🔊 " onPress={() => say(x.say as string)} />)}
               </Box>
             )}
             <Text color={ink} bold>{x.prompt}</Text>
@@ -743,7 +753,7 @@ export const register: Register = on => {
           <Box borderStyle="round" borderColor="gray" paddingX={1} marginBottom={1}>
             {x.say && (
               <Box marginRight={1}>
-                <Button key="play" hotkey="p" label="🔊 " onPress={() => say(x.say as string)} />
+                {lift(true, 'play-w', <Button key="play" hotkey="p" label="🔊 " onPress={() => say(x.say as string)} />)}
               </Box>
             )}
             <Text color={ink} bold>{x.prompt}</Text>
@@ -780,7 +790,7 @@ export const register: Register = on => {
           <Box marginRight={1}>
             <Text color={ink}>{isDiag ? `${s.i + 1}/${s.ex.length}` : heartsRow(s.hearts, MAX_HEARTS)}</Text>
           </Box>
-          <Button key="sound" label={s.sound ? '🔊' : '🔇'} onPress={() => update($, app, a => ({ ...a, sound: !a.sound }))} />
+          {lift(true, 'sound-w', <Button key="sound" label={s.sound ? '🔊' : '🔇'} onPress={() => update($, app, a => ({ ...a, sound: !a.sound }))} />)}
         </Box>
         <Box marginBottom={1}>
           <Text bold color={tint('magenta')}>{x.again ? '↻ Try again: ' : ''}{x.title}</Text>

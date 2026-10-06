@@ -56,8 +56,16 @@ export const levelOpen = (a: App, level: string) => {
   return k <= 0 || !!a.tested[`${a.lang}:${level}`] || doneCount(a, LEVELS[k - 1]) >= LESSONS_PER_LEVEL
 }
 
+/** True for a level below one the learner opened by a test: the test showed they know it, so every lesson is playable. */
+export const clearedByTest = (a: App, level: string) =>
+  LEVELS.slice(LEVELS.indexOf(level as Level) + 1).some(l => !!a.tested[`${a.lang}:${l}`])
+
 export const nodeState = (a: App, level: string, idx: number): 'done' | 'current' | 'locked' =>
-  starsOf(a, level, idx) > 0 ? 'done' : levelOpen(a, level) && (idx === 0 || starsOf(a, level, idx - 1) > 0) ? 'current' : 'locked'
+  starsOf(a, level, idx) > 0
+    ? 'done'
+    : levelOpen(a, level) && (idx === 0 || starsOf(a, level, idx - 1) > 0 || clearedByTest(a, level))
+      ? 'current'
+      : 'locked'
 
 export const firstOpen = (a: App, level: string) => {
   for (let i = 0; i < LESSONS_PER_LEVEL; i++) if (starsOf(a, level, i) === 0) return i
