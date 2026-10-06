@@ -162,6 +162,7 @@ export const register: Register = on => {
         if (nodeState(target, level, idx) === 'locked') return { ...a, note: 'Finish the lesson before it to unlock this one.' }
         return { ...a, ...fresh, level, screen: 'intro' as const, lesson: idx, unit: unitIndex(idx) }
       })
+    const openWords = () => update($, app, a => ({ ...a, ...fresh, screen: 'words' as const }))
     const openPractice = () => update($, app, a => ({ ...a, ...fresh, screen: 'intro' as const, lesson: -2 }))
     const openTest = () => update($, app, a => ({ ...a, ...fresh, screen: 'intro' as const, lesson: -1 }))
     const toMap = () =>
@@ -360,8 +361,13 @@ export const register: Register = on => {
           })}
           {s.note && <Text color="red">{s.note}</Text>}
           {open && n > 0 && (
-            <Box borderStyle="round" borderColor="gray" paddingX={1}>
-              <Button key="practice" hotkey="x" label="💪 Practice · mixed review of your finished lessons" onPress={openPractice} />
+            <Box>
+              <Box borderStyle="round" borderColor="gray" paddingX={1} marginRight={1}>
+                <Button key="practice" hotkey="x" label="💪 Practice" onPress={openPractice} />
+              </Box>
+              <Box borderStyle="round" borderColor="gray" paddingX={1}>
+                <Button key="words" hotkey="w" label="📖 Words" onPress={openWords} />
+              </Box>
             </Box>
           )}
           {!open && (
@@ -371,6 +377,41 @@ export const register: Register = on => {
               <Button key="test" label="Take the placement quiz ▶" onPress={openTest} />
             </Box>
           )}
+        </Box>
+      )
+    }
+
+    // ================================ WORDS ==================================================
+    if (s.screen === 'words') {
+      const unit = UNITS[s.level][s.unit]
+      const got = unit.lessons.map((l, p) => ({ l, p })).filter(({ p }) => starsOf(s, s.level, s.unit * 5 + p) > 0)
+      return (
+        <Box flexDirection="column">
+          {header}
+          <Box borderStyle="round" borderColor={info.color} paddingX={1} flexDirection="column">
+            <Box>
+              <Button key="unit-prev" label={s.unit > 0 ? '◀ ' : '   '} onPress={() => goUnit(-1)} />
+              <Text bold color={info.color}>📖 {s.level} · UNIT {s.unit + 1} · {unit.title}</Text>
+              <Button key="unit-next" label={s.unit < 3 ? ' ▶' : '  '} onPress={() => goUnit(1)} />
+            </Box>
+            <Text dimColor>{got.length}/4 lessons collected · tap 🔊 to hear a word</Text>
+          </Box>
+          {got.length === 0 && <Text dimColor>Finish a lesson in this unit to collect its words.</Text>}
+          {got.map(({ l, p }) => (
+            <Box key={`wl-${p}`} flexDirection="column">
+              <Text bold>{l.title}</Text>
+              {l.words.map((w, k) => (
+                <Box key={`ww-${p}-${k}`}>
+                  <Button key={`say-${p}-${k}`} label="🔊 " onPress={() => say(w[0])} />
+                  <Text bold color={info.color}>{w[0]}</Text>
+                  <Text dimColor>  {w[1]}</Text>
+                </Box>
+              ))}
+            </Box>
+          ))}
+          <Box borderStyle="round" borderColor="gray" paddingX={1}>
+            <Button key="back" hotkey="m" label="← Map" onPress={toMap} />
+          </Box>
         </Box>
       )
     }

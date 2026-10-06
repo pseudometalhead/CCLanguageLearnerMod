@@ -22,7 +22,7 @@ export type Exercise =
   | { kind: 'build'; title: string; again?: boolean; prompt: string; answer: string; bank: string[]; say?: string; auto?: boolean; after?: string }
 
 export type App = {
-  screen: 'home' | 'intro' | 'play' | 'result'
+  screen: 'home' | 'intro' | 'play' | 'result' | 'words'
   level: Level
   unit: number
   /** 0 to 19 within the level; -1 is the placement quiz that unlocks `level`. */

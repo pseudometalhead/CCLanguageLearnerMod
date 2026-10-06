@@ -298,7 +298,7 @@ test('practice appears after the first finished lesson, pays 5 XP and leaves the
   expect(await ui.find({ text: /Practice/ })).toBeUndefined()
   await playLesson(ui, 'A1', 0)
   await ui.press({ key: 'map' })
-  expect(await ui.find({ text: /Practice · mixed review/ })).toBeDefined()
+  expect(await ui.find({ text: /💪 Practice/ })).toBeDefined()
   await ui.press({ key: 'practice' })
   expect(await ui.find({ text: /PRACTICE · A1/ })).toBeDefined()
   await ui.press({ key: 'start' })
@@ -362,5 +362,26 @@ test('a narrow pane still draws every screen', async ($, on) => {
     await ui.press({ key: 'continue' })
   }
   expect(await ui.find({ text: /LESSON COMPLETE/ })).toBeDefined()
+  await ui.unmount()
+})
+
+test('the Words screen lists the words of finished lessons and speaks them', async ($, on) => {
+  world(on)
+  spoken.length = 0
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  expect(await ui.find({ text: /📖 Words/ })).toBeUndefined()
+  await playLesson(ui, 'A1', 0)
+  await ui.press({ key: 'map' })
+  spoken.length = 0 // the lesson itself played audio
+  await ui.press({ key: 'words' })
+  expect(await ui.find({ text: /UNIT 1 · Hallo!/ })).toBeDefined()
+  expect(await ui.find({ text: /1\/4 lessons collected/ })).toBeDefined()
+  expect(await ui.find({ text: /guten Morgen/ })).toBeDefined()
+  await ui.press({ key: 'say-0-0' })
+  expect(spoken).toEqual(['hallo'])
+  await ui.press({ key: 'unit-next' })
+  expect(await ui.find({ text: /Finish a lesson in this unit/ })).toBeDefined()
+  await ui.press({ key: 'back' })
+  expect(await ui.find({ text: /A1 · Beginner/ })).toBeDefined()
   await ui.unmount()
 })
