@@ -75,6 +75,25 @@ export const register: Register = on => {
     // The pane can be narrow: tighten the winding path and stack wide columns.
     const cols = e.props.bodyColumns || 56
     const narrow = cols < 46
+    // A desktop button is native and already framed, so it is drawn bare (the main action in the surface's primary
+    // style, the hotkey as its own badge). The terminal draws `[ label ]`, so a round border frames it and the hotkey
+    // number is part of the label. `tone` colours the frame (always on the terminal, only to mark right/wrong on a desktop).
+    const desk = e.surface === 'desktop'
+    const act = (key: string, label: string, onPress: () => unknown, o: { hotkey?: string; main?: boolean; tone?: string; focus?: boolean; num?: string; end?: boolean; gap?: boolean } = {}) => {
+      const framed = !desk || (o.tone !== undefined && o.tone !== 'gray')
+      return (
+        <Box key={`act-${key}`} {...(framed ? { borderStyle: 'round' as const, borderColor: o.tone ?? 'gray', paddingX: 1 } : {})} marginRight={o.end ? 0 : 1} marginBottom={o.gap ? 1 : 0}>
+          <Button
+            key={key}
+            hotkey={o.hotkey}
+            variant={desk ? (o.main ? 'primary' : 'secondary') : undefined}
+            autoFocus={o.focus ? true : undefined}
+            label={!desk && o.num ? `${o.num} ${label}` : label}
+            onPress={onPress}
+          />
+        </Box>
+      )
+    }
 
     // ---- audio ----------------------------------------------------------------------------
     const say = async (text: string) => {
@@ -344,11 +363,7 @@ export const register: Register = on => {
               <Box marginBottom={1}>
                 <Text dimColor>20 questions, A1 upwards. We stop when it gets too hard and start you at the right level. No hearts to lose.</Text>
               </Box>
-              <Box>
-                <Box borderStyle="round" borderColor="yellow" paddingX={1}>
-                  <Button key="check-new" hotkey="l" autoFocus label="🎯 Take the level check" onPress={openCheck} />
-                </Box>
-              </Box>
+              <Box>{act('check-new', '🎯 Take the level check', openCheck, { hotkey: 'l', main: true, focus: true, tone: 'yellow', end: true })}</Box>
             </Box>
           )}
           <Box marginBottom={1}>
@@ -402,24 +417,14 @@ export const register: Register = on => {
               <Text color="red">{s.note}</Text>
             </Box>
           )}
-          <Box marginTop={1}>
-            <Box borderStyle="round" borderColor="gray" paddingX={1}>
-              <Button key="audiotest" hotkey="a" label="🔧 Audio test" onPress={testAudio} />
-            </Box>
-          </Box>
           {open && n > 0 && (
-            <Box marginTop={1}>
-              <Box borderStyle="round" borderColor="gray" paddingX={1} marginRight={1}>
-                <Button key="practice" hotkey="x" label="💪 Practice" onPress={openPractice} />
-              </Box>
-              <Box borderStyle="round" borderColor="gray" paddingX={1} marginRight={1}>
-                <Button key="words" hotkey="w" label="📖 Words" onPress={openWords} />
-              </Box>
-              <Box borderStyle="round" borderColor="gray" paddingX={1}>
-                <Button key="check" hotkey="l" label="🎯 Level check" onPress={openCheck} />
-              </Box>
+            <Box marginTop={1} flexWrap="wrap">
+              {act('practice', '💪 Practice', openPractice, { hotkey: 'x' })}
+              {act('words', '📖 Words', openWords, { hotkey: 'w' })}
+              {act('check', '🎯 Level check', openCheck, { hotkey: 'l', end: true })}
             </Box>
           )}
+          <Box marginTop={1}>{act('audiotest', '🔧 Audio test', testAudio, { hotkey: 'a', end: true })}</Box>
           {!open && (
             <Box borderStyle="round" borderColor="yellow" paddingX={1} flexDirection="column">
               <Text bold color="yellow">🚀 Know {s.level} already?</Text>
@@ -459,9 +464,7 @@ export const register: Register = on => {
               ))}
             </Box>
           ))}
-          <Box borderStyle="round" borderColor="gray" paddingX={1}>
-            <Button key="back" hotkey="m" label="← Map" onPress={toMap} />
-          </Box>
+          <Box>{act('back', '← Map', toMap, { hotkey: 'm', end: true })}</Box>
         </Box>
       )
     }
@@ -521,12 +524,8 @@ export const register: Register = on => {
             </Box>
           )}
           <Box>
-            <Box borderStyle="round" borderColor="green" paddingX={1} marginRight={1}>
-              <Button key="start" hotkey="s" autoFocus label="▶ Start" onPress={begin} />
-            </Box>
-            <Box borderStyle="round" borderColor="gray" paddingX={1}>
-              <Button key="back" hotkey="m" label="← Map" onPress={toMap} />
-            </Box>
+            {act('start', '▶ Start', begin, { hotkey: 's', main: true, focus: true, tone: 'green' })}
+            {act('back', '← Map', toMap, { hotkey: 'm', end: true })}
           </Box>
         </Box>
       )
@@ -551,23 +550,15 @@ export const register: Register = on => {
             {isDiag ? <Text>⭐ +{s.gained} XP</Text> : <Text>🎯 {s.correct}/{s.ex.filter(q => !q.again).length} first try   ⭐ +{s.gained} XP   🔥 best combo {s.best}</Text>}
             <Text dimColor>Daily goal {goal}/{GOAL} <Text color="green">{bar(goal, GOAL, 10)}</Text>{goal >= GOAL ? ' ✅' : ''}</Text>
           </Box>
-          {isDiag && (
-            <Box borderStyle="round" borderColor="green" paddingX={1} marginBottom={1}>
-              <Button key="begin" hotkey="n" autoFocus label={`Start ${s.level} ▶`} onPress={toMap} />
-            </Box>
-          )}
+          {isDiag && <Box>{act('begin', `Start ${s.level} ▶`, toMap, { hotkey: 'n', main: true, focus: true, tone: 'green', end: true, gap: true })}</Box>}
           {target && (
-            <Box borderStyle="round" borderColor="green" paddingX={1} marginBottom={1}>
-              <Button key="next" hotkey="n" autoFocus label={`Next: ${lessonInfo(course, target[0], target[1]).title} ▶`} onPress={() => openLesson(target[0], target[1])} />
+            <Box>
+              {act('next', `Next: ${lessonInfo(course, target[0], target[1]).title} ▶`, () => openLesson(target[0], target[1]), { hotkey: 'n', main: true, focus: true, tone: 'green', end: true, gap: true })}
             </Box>
           )}
           <Box>
-            <Box borderStyle="round" borderColor="gray" paddingX={1} marginRight={1}>
-              <Button key="retry" hotkey="r" label="↻ Again" onPress={() => update($, app, a => ({ ...a, ...fresh, screen: 'intro' as const }))} />
-            </Box>
-            <Box borderStyle="round" borderColor="gray" paddingX={1}>
-              <Button key="map" hotkey="m" autoFocus={!target && !isDiag ? true : undefined} label="🗺 Map" onPress={toMap} />
-            </Box>
+            {act('retry', '↻ Again', () => update($, app, a => ({ ...a, ...fresh, screen: 'intro' as const })), { hotkey: 'r' })}
+            {act('map', '🗺 Map', toMap, { hotkey: 'm', focus: !target && !isDiag, end: true })}
           </Box>
         </Box>
       )
@@ -605,9 +596,7 @@ export const register: Register = on => {
               const bc = !answered1 ? 'gray' : o === x.answer ? 'green' : o === s.picked ? 'red' : 'gray'
               const mark = !answered1 ? '' : o === x.answer ? '✅ ' : o === s.picked ? '❌ ' : ''
               return (
-                <Box key={`ob-${o}`} borderStyle="round" borderColor={bc} paddingX={1} marginRight={1} marginBottom={1}>
-                  <Button key={`opt-${o}`} hotkey={String(n + 1)} label={`${mark || `${n + 1} `}${o}`} onPress={() => pick(o)} />
-                </Box>
+                act(`opt-${o}`, `${mark}${o}`, () => pick(o), { hotkey: String(n + 1), num: mark ? undefined : String(n + 1), tone: bc, gap: true })
               )
             })}
           </Box>
@@ -621,16 +610,12 @@ export const register: Register = on => {
         <Box flexDirection={stacked ? 'column' : 'row'}>
           <Box flexDirection="column" marginRight={1}>
             {x.left.map((t, n) => (
-              <Box key={`lb-${t}`} borderStyle="round" borderColor={s.matched.includes(t) ? 'green' : s.sel === t ? 'cyan' : 'gray'} paddingX={1} marginBottom={1}>
-                <Button key={`l-${t}`} hotkey={String(n + 1)} label={s.matched.includes(t) ? `✅ ${t}` : `${n + 1} ${t}`} onPress={() => tapLeft(t)} />
-              </Box>
+              act(`l-${t}`, s.matched.includes(t) ? `✅ ${t}` : t, () => tapLeft(t), { hotkey: String(n + 1), num: s.matched.includes(t) ? undefined : String(n + 1), tone: s.matched.includes(t) ? 'green' : s.sel === t ? 'cyan' : 'gray', gap: true, end: true })
             ))}
           </Box>
           <Box flexDirection="column">
             {x.right.map((r, n) => (
-              <Box key={`rb-${r}`} borderStyle="round" borderColor={doneRight.includes(r) ? 'green' : 'gray'} paddingX={1} marginBottom={1}>
-                <Button key={`r-${r}`} hotkey={'qwert'[n]} label={doneRight.includes(r) ? `✅ ${r}` : `${'qwert'[n]} ${r}`} onPress={() => tapRight(r)} />
-              </Box>
+              act(`r-${r}`, doneRight.includes(r) ? `✅ ${r}` : r, () => tapRight(r), { hotkey: 'qwert'[n], num: doneRight.includes(r) ? undefined : 'qwert'[n], tone: doneRight.includes(r) ? 'green' : 'gray', gap: true, end: true })
             ))}
           </Box>
         </Box>
@@ -653,22 +638,14 @@ export const register: Register = on => {
           <Box flexWrap="wrap">
             {x.bank.map((w, k) =>
               s.used.includes(k) ? null : (
-                <Box key={`cb-${k}`} borderStyle="round" borderColor="gray" paddingX={1} marginRight={1} marginBottom={1}>
-                  <Button key={`b-${k}`} hotkey={k < 9 ? String(k + 1) : undefined} label={k < 9 ? `${k + 1} ${w}` : w} onPress={() => tapBank(k)} />
-                </Box>
+                act(`b-${k}`, w, () => tapBank(k), { hotkey: k < 9 ? String(k + 1) : undefined, num: k < 9 ? String(k + 1) : undefined, gap: true })
               ),
             )}
           </Box>
           {!answered1 && (
             <Box>
-              <Box borderStyle="round" borderColor="gray" paddingX={1} marginRight={1}>
-                <Button key="undo" hotkey="u" label="↩ Undo" onPress={undo} />
-              </Box>
-              {s.used.length > 0 && (
-                <Box borderStyle="round" borderColor="green" paddingX={1}>
-                  <Button key="check" hotkey="c" autoFocus label="✔ Check" onPress={check} />
-                </Box>
-              )}
+              {act('undo', '↩ Undo', undo, { hotkey: 'u' })}
+              {s.used.length > 0 && act('check', '✔ Check', check, { hotkey: 'c', main: true, focus: true, tone: 'green', end: true })}
             </Box>
           )}
         </Box>
@@ -719,7 +696,7 @@ export const register: Register = on => {
             {!ok && answerText !== '' && <Text>Correct answer: <Text bold>{answerText}</Text></Text>}
             {s.note !== '' && <Text dimColor>{s.note}</Text>}
             <Text dimColor>Press Enter to continue.</Text>
-            <Button key="continue" hotkey="c" autoFocus label={isLast ? '▶ Finish' : '▶ Continue'} onPress={cont} />
+            <Box marginTop={1}>{act('continue', isLast ? '▶ Finish' : '▶ Continue', cont, { hotkey: 'c', main: true, focus: true, tone: ok ? 'green' : 'red', end: true })}</Box>
           </Box>
         )}
       </Box>
