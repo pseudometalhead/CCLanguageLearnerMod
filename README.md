@@ -16,7 +16,7 @@ Type `/learn` in Claude Code. **German, A1 → C1**, 20 lessons per level (100 i
    select the meaning · how do you say it · tap the pairs · listen and choose · article (der/die/das) ·
    spell it / spell what you hear · fill the gap · translate (pick) · translate (word bank, with decoys) ·
    type what you hear · translate into English.
-3. 5 hearts, combo bonus XP for streaks of correct answers, and the owl 🦉 cheers you on in German.
+3. 5 hearts, combo bonus XP for streaks of correct answers, and the feedback banner cheers you on in German (Super! Prima! Genau!).
 4. Reordering a sentence's words costs no heart, because word order is often free; you just see the model answer.
 
 ## Keyboard

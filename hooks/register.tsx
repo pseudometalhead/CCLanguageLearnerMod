@@ -295,7 +295,7 @@ export const register: Register = on => {
     const header = (
       <Box borderStyle="round" borderColor="cyan" paddingX={1} flexDirection="column">
         <Box>
-          <Text bold color="cyan">🦉 LinguaCC <Text dimColor>· German </Text></Text>
+          <Text bold color="cyan">🌍 LinguaCC <Text dimColor>· German </Text></Text>
           <Button key="sound" label={s.sound ? '🔊 on' : '🔇 off'} onPress={() => update($, app, a => ({ ...a, sound: !a.sound }))} />
         </Box>
         <Text>🔥 {s.streak}   ⭐ {s.xp}   🎯 {Math.min(s.dayXp, GOAL)}/{GOAL} <Text color="green">{bar(Math.min(s.dayXp, GOAL), GOAL, 8)}</Text></Text>
@@ -311,7 +311,7 @@ export const register: Register = on => {
       const base = narrow ? WIND_NARROW : WIND
       const wind = s.unit % 2 === 0 ? base : [...base].reverse()
       const fresh0 = doneCount(s, 'A1') === 0 && s.xp === 0
-      const owl = !open
+      const coach = !open
         ? 'This level is locked. Finish the one before, or jump ahead!'
         : fresh0
           ? 'Willkommen! Tap the ▶️ to start your first lesson.'
@@ -329,7 +329,7 @@ export const register: Register = on => {
             ))}
           </Box>
           <Text color={info.color} bold>{s.level} · {info.name}  {bar(n, LESSONS_PER_LEVEL, 10)} {n}/{LESSONS_PER_LEVEL}</Text>
-          <Text dimColor>🦉 “{owl}”</Text>
+          <Text dimColor>💬 “{coach}”</Text>
           <Box borderStyle="round" borderColor={open ? info.color : 'gray'} paddingX={1} flexDirection="column">
             <Box>
               <Button key="unit-prev" label={s.unit > 0 ? '◀ ' : '   '} onPress={() => goUnit(-1)} />
@@ -616,7 +616,7 @@ export const register: Register = on => {
         {answered1 && (
           <Box borderStyle="round" borderColor={ok ? 'green' : 'red'} paddingX={1} flexDirection="column">
             <Text bold color={ok ? 'green' : 'red'}>
-              🦉 {ok ? PRAISE[s.i % PRAISE.length] : 'Nicht ganz.'}
+              {ok ? '✅' : '❌'} {ok ? PRAISE[s.i % PRAISE.length] : 'Nicht ganz.'}
               {ok && s.gain > 0 ? `  +${s.gain} XP` : ''}
               {ok && s.combo >= 3 ? `  🔥 ${s.combo} in a row` : ''}
             </Text>
