@@ -31,14 +31,16 @@ The pane opens focused. If the keys do nothing (you pressed Escape, or clicked b
 **Enter** acts on the highlighted button (Start, Check, Continue, Next); Tab or the arrows move the highlight. **u** undo, **p** play the audio, **s** start, **x** practice, **w** words, **l** level check, **n** next lesson, **r** try again, **m** back to the map.
 
 ## Audio
-No sound? The map has a **🔧 Audio test** button (hotkey **a**): it tries speech and a short beep and shows the exact error. Claude Code's own docs only promise speech on macOS (`say`) and clip playback via `afplay`, so on Windows the app may have no speech at all.
+Every word and sentence is spoken. On macOS it uses the system voice (German **Anna**). Claude Code has **no speech
+synthesizer on Windows or Linux**, so there the app plays **recorded clips** that ship in `audio/<course>/` (559 for
+German, made with espeak-ng's MBROLA voice and ffmpeg: clear, but robotic, not a native speaker). If neither works, the
+app shows the text instead. The 🔊/🔇 toggle mutes everything.
 
-German is spoken with the system speech synthesizer. The mod tries a German voice by name (macOS **Anna**; Windows
-**Microsoft Hedda** / **Katja** / **Stefan**), then falls back to your system's default voice, which may speak German with
-the wrong accent. Install a German voice for the best result (macOS: System Settings → Accessibility → Spoken Content →
-System Voice → Manage Voices; Windows: Settings → Time & language → Speech → Add voices, and add German).
-If no voice works at all, the mod shows the German text instead.
-The 🔊/🔇 toggle mutes everything.
+The map has a **🔧 Audio test** button (hotkey **a**) that tries speech, a recorded clip and a beep, and shows the exact
+error for each.
+
+To rebuild the clips after changing a course (needs `espeak-ng`, `mbrola` voices and `ffmpeg`):
+`npx tsx scripts/make-audio.ts` (only new words are made; `--check` lists words without a clip).
 
 ## Install (plug and play)
 

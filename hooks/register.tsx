@@ -5,6 +5,7 @@ import type { App, Level } from '../types'
 import { APP_NAME, LEVELS, LEVEL_INFO } from './course'
 import { COURSES, DEFAULT_COURSE, courseOf } from './courses'
 import { DAY, doneCount, firstOpen, fresh, GOAL, levelOpen, MAX_HEARTS, newApp, newLearner, nextTarget, nodeState, placedLevel, placedTested, primaryKey, restore, sk, starsOf, switchCourse } from './progress'
+import { clipAsset } from './audio'
 import { BEEP_WAV } from './beep'
 import { bar, buildDiagnostic, buildLesson, buildPractice, buildTest, DIAG_PASS, DIAG_STAGE, heartsRow, isReview, lessonInfo, LESSONS_PER_LEVEL, unitIndex } from './engine'
 
@@ -85,9 +86,18 @@ export const register: Register = on => {
           return
         } catch (err) {
           why = err instanceof Error ? err.message : String(err)
+          // No synthesizer at all (Windows): no other voice name will help.
+          if (/no .*synthesizer/i.test(why)) break
         }
       }
-      await update($, app, a => ({ ...a, note: `🔇 No speech here (${why.slice(0, 160) || 'no reason given'}). It says: “${text}”` }))
+      // No speech here: play the recorded clip that ships with the course, if there is one.
+      try {
+        await $.audio.play({ asset: clipAsset(course.code, text) })
+        return
+      } catch (err) {
+        why = `${why}; clip: ${err instanceof Error ? err.message : String(err)}`
+      }
+      await update($, app, a => ({ ...a, note: `🔇 No audio here (${why.slice(0, 200) || 'no reason given'}). It says: “${text}”` }))
     }
     // Says in the pane whether speech and clip playback work here, with the engine's own error if not.
     const testAudio = async () => {
@@ -99,8 +109,14 @@ export const register: Register = on => {
         report.push(`speech: ${(err instanceof Error ? err.message : String(err)).slice(0, 140)}`)
       }
       try {
+        await $.audio.play({ asset: clipAsset(course.code, 'Guten Morgen') })
+        report.push('recorded clip “Guten Morgen”: played')
+      } catch (err) {
+        report.push(`recorded clip: ${(err instanceof Error ? err.message : String(err)).slice(0, 140)}`)
+      }
+      try {
         await $.audio.play({ base64: BEEP_WAV, mime: 'audio/wav' })
-        report.push('beep: played (did you hear it?)')
+        report.push('beep: played')
       } catch (err) {
         report.push(`beep: ${(err instanceof Error ? err.message : String(err)).slice(0, 140)}`)
       }

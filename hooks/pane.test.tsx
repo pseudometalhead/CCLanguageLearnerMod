@@ -2,6 +2,7 @@ import { expect, mock, test } from 'claude-code/testing'
 
 import type { Exercise } from '../types'
 import { german } from './courses/de'
+import { clipAsset } from './audio'
 import { buildDiagnostic, buildLesson, buildPractice, buildTest } from './engine'
 
 const NOW = 1_700_000_000_000
@@ -243,7 +244,7 @@ test('audio failure falls back to showing the German text', async ($, on) => {
   await ui.press({ key: 'node-0' })
   await ui.press({ key: 'start' })
   await ui.press({ key: 'play' })
-  expect(await ui.find({ text: /No speech here/ })).toBeDefined()
+  expect(await ui.find({ text: /No audio here/ })).toBeDefined()
   await ui.unmount()
 })
 
@@ -256,8 +257,29 @@ test('the audio test reports what works here and the engine’s own error when i
   on('audio.play', async () => ({ value: undefined }))
   const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
   await ui.press({ key: 'audiotest' })
+  expect(await ui.find({ text: /recorded clip “Guten Morgen”: played/ })).toBeDefined()
   expect(await ui.find({ text: /speech: .*no implementation for audio\.speak/ })).toBeDefined()
   expect(await ui.find({ text: /beep: played/ })).toBeDefined()
+  await ui.unmount()
+})
+
+test('with no speech synthesizer the recorded clip of the word plays instead', async ($, on) => {
+  mock.clock(on, { now: NOW })
+  mock.store(on)
+  const clips: string[] = []
+  on('audio.speak', async () => {
+    throw new Error('$.audio.speak: no speech synthesizer on windows')
+  })
+  on('audio.play', async (_$: any, e: any) => {
+    clips.push(e.clip.asset)
+    return { value: undefined }
+  })
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  await ui.press({ key: 'w-0' }).catch(() => undefined)
+  await ui.press({ key: 'node-0' })
+  await ui.press({ key: 'w-0' })
+  expect(clips).toEqual([clipAsset('de', 'hallo')])
+  expect(await ui.find({ text: /No audio here/ })).toBeUndefined()
   await ui.unmount()
 })
 
@@ -277,7 +299,7 @@ test('audio tries each voice name, then the platform default', async ($, on) => 
   await ui.press({ key: 'play' })
   expect(tried.slice(0, german.voices.length)).toEqual(german.voices)
   expect(tried[german.voices.length]).toBeUndefined()
-  expect(await ui.find({ text: /No speech here/ })).toBeUndefined()
+  expect(await ui.find({ text: /No audio here/ })).toBeUndefined()
   await ui.unmount()
 })
 

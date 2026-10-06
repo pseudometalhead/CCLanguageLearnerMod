@@ -4,6 +4,7 @@ import { LEVELS } from './course'
 import type { Course } from './course'
 import { COURSES } from './courses'
 import { german } from './courses/de'
+import { clipKey } from './audio'
 import { buildDiagnostic, buildLesson, buildPractice, buildTest, DIAG_STAGE, lessonInfo, LESSONS_PER_LEVEL, tokens, unitIndex } from './engine'
 
 // Every test below runs once per course, so a new language is checked the moment it is registered.
@@ -199,6 +200,12 @@ test('the level check has one stage of valid questions per level, A1 up', () => 
       })
     }
   }
+})
+
+test('clip names ignore case and punctuation but tell different words apart', () => {
+  expect(clipKey('Hallo, Anna!')).toBe(clipKey('hallo anna'))
+  expect(clipKey('Hallo')).not.toBe(clipKey('Hallo Anna'))
+  expect(clipKey('Guten Morgen')).toMatch(/^[0-9a-f]{16}$/)
 })
 
 // A language without gendered articles and a different name: nothing may still say "German" or ask for an article.
