@@ -165,8 +165,15 @@ export const register: Register = on => {
     const openWords = () => update($, app, a => ({ ...a, ...fresh, screen: 'words' as const }))
     const openPractice = () => update($, app, a => ({ ...a, ...fresh, screen: 'intro' as const, lesson: -2 }))
     const openTest = () => update($, app, a => ({ ...a, ...fresh, screen: 'intro' as const, lesson: -1 }))
+    // Leaving a lesson half way forfeits the XP it earned so far, so it cannot be farmed by quitting.
     const toMap = () =>
-      update($, app, a => ({ ...a, ...fresh, screen: 'home' as const, unit: unitIndex(firstOpen(a, a.level)) }))
+      update($, app, a => ({
+        ...a,
+        ...fresh,
+        screen: 'home' as const,
+        xp: a.screen === 'play' ? a.xp - a.gained : a.xp,
+        unit: unitIndex(firstOpen(a, a.level)),
+      }))
 
     const begin = async () => {
       const seed = (await $.clock.now()) % 1_000_003
@@ -208,6 +215,7 @@ export const register: Register = on => {
         update($, app, a => {
           const q = a.ex[a.i]
           if (a.status !== 'idle' || q.kind !== 'match') return a
+          if (a.matched.some(t => q.pairs[t] === r)) return a
           if (a.sel === null) return { ...a, note: 'Tap a word on the left first.' }
           if (q.pairs[a.sel] === r) {
             const matched = [...a.matched, a.sel]
@@ -232,7 +240,7 @@ export const register: Register = on => {
           const sameWords = q.kind === 'build' && [...parts].sort().join(' ') === q.answer.split(' ').sort().join(' ')
           // Word order is often free in German and English, so a reshuffle costs no heart.
           return sameWords
-            ? { ...wrong(a, true), note: `Same words, different order. Yours may work too. Model answer: ${q.answer}` }
+            ? { ...wrong(a, true), note: `Same words, different order. Yours may work too, no heart lost. You will see it once more at the end. Model answer: ${q.answer}` }
             : wrong(a)
         }),
       )
@@ -434,7 +442,7 @@ export const register: Register = on => {
                 : isTest
                 ? `12 questions from ${LEVELS[LEVELS.indexOf(s.level) - 1]}. Make at most 2 mistakes to unlock ${s.level}.`
                 : isRev
-                  ? `14 mixed puzzles on all 20 words and 8 sentences of this unit.`
+                  ? `14 mixed puzzles on the words and sentences of this unit.`
                   : `${unit.sub} · ${s.level}`}
             </Text>
           </Box>
@@ -560,7 +568,6 @@ export const register: Register = on => {
       )
     } else {
       const built = s.used.map(k => x.bank[k])
-      const sep = x.kind === 'spell' ? ' ' : ' '
       body = (
         <Box flexDirection="column">
           <Box borderStyle="round" borderColor="gray" paddingX={1}>
@@ -568,7 +575,7 @@ export const register: Register = on => {
             <Text bold>{x.prompt}</Text>
           </Box>
           <Box borderStyle="round" borderColor={ok ? 'green' : answered1 ? 'red' : 'cyan'} paddingX={1} minHeight={3}>
-            <Text>{built.length ? built.join(sep) : x.kind === 'spell' ? '_ _ _' : '…'}</Text>
+            <Text>{built.length ? built.join(' ') : x.kind === 'spell' ? '_ _ _' : '…'}</Text>
           </Box>
           <Box flexWrap="wrap">
             {x.bank.map((w, k) =>

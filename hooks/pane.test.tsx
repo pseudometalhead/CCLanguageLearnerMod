@@ -385,3 +385,38 @@ test('the Words screen lists the words of finished lessons and speaks them', asy
   expect(await ui.find({ text: /A1 · Beginner/ })).toBeDefined()
   await ui.unmount()
 })
+
+test('tapping an already matched word does not cost a heart', async ($, on) => {
+  world(on)
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  await ui.press({ key: 'node-0' })
+  await ui.press({ key: 'start' })
+  const ex = buildLesson('A1', 0, SEED)
+  let k = 0
+  while (ex[k].kind !== 'match') {
+    await solve(ui, ex[k])
+    await ui.press({ key: 'continue' })
+    k++
+  }
+  const m = ex[k]
+  if (m.kind !== 'match') throw new Error('expected a match puzzle')
+  await ui.press({ key: `l-${m.left[0]}` })
+  await ui.press({ key: `r-${m.pairs[m.left[0]]}` })
+  await ui.press({ key: `l-${m.left[1]}` })
+  await ui.press({ key: `r-${m.pairs[m.left[0]]}` }) // already matched: ignored
+  expect(await ui.find({ text: /❤️❤️❤️❤️❤️/ })).toBeDefined()
+  expect(await ui.find({ text: /Not a match/ })).toBeUndefined()
+  await ui.unmount()
+})
+
+test('quitting a lesson half way forfeits the XP it earned', async ($, on) => {
+  world(on)
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  await ui.press({ key: 'node-0' })
+  await ui.press({ key: 'start' })
+  await solve(ui, buildLesson('A1', 0, SEED)[0])
+  expect(await ui.find({ text: /\+2 XP/ })).toBeDefined()
+  await ui.press({ key: 'quit' })
+  expect(await ui.find({ text: /⭐ 0/ })).toBeDefined()
+  await ui.unmount()
+})

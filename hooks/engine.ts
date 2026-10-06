@@ -13,9 +13,11 @@ export const shuffle = <T,>(items: readonly T[], seed: number): T[] => {
   return out
 }
 
+// Only "article + one word" is a noun: idioms like "die Nase voll haben" start with an article too.
 const ARTICLE = /^(der|die|das) /
-export const hasArticle = (w: string) => ARTICLE.test(w)
-export const stripArt = (w: string) => w.replace(ARTICLE, '')
+const NOUN = /^(der|die|das) \S+$/
+export const hasArticle = (w: string) => NOUN.test(w)
+export const stripArt = (w: string) => (NOUN.test(w) ? w.replace(ARTICLE, '') : w)
 export const plain = (s: string) => s.replace(/[[\]]/g, '')
 // Word tokens of a sentence: punctuation does not count, as in Duolingo.
 export const tokens = (s: string) => plain(s).replace(/[,.!?;:]/g, '').split(/\s+/).filter(Boolean)
@@ -217,8 +219,10 @@ const contentLesson = (level: string, l: Lesson, p: number, seed: number): Exerc
 const review = (level: string, unit: Unit, seed: number): Exercise[] => {
   const c = (n: number): Ctx => ({ level, seed: seed + n * 7 })
   const words = shuffle(wordsOf([unit]), seed)
-  const sents = shuffle(sentencesOf([unit]), seed + 1)
-  const gaps = sents.filter(hasGap)
+  const all = shuffle(sentencesOf([unit]), seed + 1)
+  // The two gap sentences are kept apart from the five others, so a gap is never filled in by an earlier puzzle.
+  const gaps = all.filter(hasGap).slice(0, 2)
+  const rest = all.filter(p => !gaps.includes(p))
   const nouns = words.filter(x => hasArticle(x[0]))
   const spellW = words.filter(x => spellable(x[0]))
   return compact([
@@ -228,14 +232,14 @@ const review = (level: string, unit: Unit, seed: number): Exercise[] => {
     nouns[0] ? article(c(4), nouns[0]) : chooseEn(c(4), words[7]),
     cloze(c(5), gaps[0]),
     spellW[0] ? spell(c(6), spellW[0], true) : chooseEn(c(6), words[8]),
-    translateChoice(c(7), sents[1], false),
-    buildEnDe(c(8), sents[2], 2),
-    listenBuild(c(9), sents[3], 1),
+    translateChoice(c(7), rest[0], false),
+    buildEnDe(c(8), rest[1], 2),
+    listenBuild(c(9), rest[2], 1),
     match(c(10), words.slice(10, 15)),
-    buildDeEn(c(11), sents[4]),
-    translateChoice(c(12), sents[5], true),
+    buildDeEn(c(11), rest[3]),
+    translateChoice(c(12), rest[4], true),
     gaps[1] ? cloze(c(13), gaps[1]) : undefined,
-    buildEnDe(c(14), sents[7], 2),
+    buildEnDe(c(14), rest[5], 2),
   ])
 }
 
@@ -268,8 +272,9 @@ export const buildTest = (level: Level, seed: number): Exercise[] => {
   const src = LEVELS[Math.max(0, LEVELS.indexOf(level) - 1)]
   const c = (n: number): Ctx => ({ level: src, seed: seed + n * 7 })
   const words = shuffle(levelWords(src), seed)
-  const sents = shuffle(levelSentences(src), seed + 1)
-  const gaps = sents.filter(hasGap)
+  const all = shuffle(levelSentences(src), seed + 1)
+  const gaps = all.filter(hasGap).slice(0, 2)
+  const sents = all.filter(p => !gaps.includes(p))
   const nouns = words.filter(x => hasArticle(x[0]))
   return compact([
     chooseDe(c(1), words[0]),
@@ -278,11 +283,11 @@ export const buildTest = (level: Level, seed: number): Exercise[] => {
     listenWord(c(4), words[7]),
     nouns[0] ? article(c(5), nouns[0]) : chooseEn(c(5), words[8]),
     cloze(c(6), gaps[0]),
-    translateChoice(c(7), sents[1], false),
-    buildEnDe(c(8), sents[2], 2),
-    listenBuild(c(9), sents[3], 1),
-    translateChoice(c(10), sents[4], true),
-    buildDeEn(c(11), sents[5]),
+    translateChoice(c(7), sents[0], false),
+    buildEnDe(c(8), sents[1], 2),
+    listenBuild(c(9), sents[2], 1),
+    translateChoice(c(10), sents[3], true),
+    buildDeEn(c(11), sents[4]),
     cloze(c(12), gaps[1]),
   ])
 }

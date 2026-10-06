@@ -116,8 +116,8 @@ test('options look alike: a noun answer is never given away by bare-word distrac
   for (const lv of LEVELS) {
     for (let idx = 0; idx < LESSONS_PER_LEVEL; idx++) {
       for (const e of buildLesson(lv, idx, 11)) {
-        if (e.kind === 'choice' && e.title === 'How do you say this in German?' && /^(der|die|das) /.test(e.answer)) {
-          expect(e.options.every(o => /^(der|die|das) /.test(o))).toBe(true)
+        if (e.kind === 'choice' && e.title === 'How do you say this in German?' && /^(der|die|das) \S+$/.test(e.answer)) {
+          expect(e.options.every(o => /^(der|die|das) \S+$/.test(o))).toBe(true)
         }
         if (e.kind === 'choice' && e.title === 'Select the correct meaning' && e.answer.startsWith('to ')) {
           expect(e.options.every(o => o.startsWith('to '))).toBe(true)
@@ -147,6 +147,37 @@ test('practice mixes whatever lessons are finished, even just one', () => {
       const ex = buildPractice(lv, done, 5)
       expect(ex.length).toBeGreaterThanOrEqual(9)
       for (const e of ex) check(e, `practice ${lv} ${done.length}`)
+    }
+  }
+})
+
+test('the article puzzle is only for single nouns, never for idioms', () => {
+  for (const lv of LEVELS) {
+    for (let idx = 0; idx < LESSONS_PER_LEVEL; idx++) {
+      for (const e of buildLesson(lv, idx, 5)) {
+        if (e.kind === 'choice' && e.title === 'Choose the correct article') {
+          expect(e.prompt.replace('＿＿＿ ', '')).not.toContain(' ')
+        }
+      }
+    }
+  }
+})
+
+test('in a unit review the second gap sentence is not shown or spoken by an earlier puzzle', () => {
+  for (const lv of LEVELS) {
+    for (const idx of [4, 9, 14, 19]) {
+      for (const seed of [1, 7, 33, 500, 9001]) {
+        const ex = buildLesson(lv, idx, seed)
+        const gaps = ex.filter(e => e.kind === 'choice' && e.title === 'Fill in the missing word')
+        for (const g of gaps) {
+          const at = ex.indexOf(g)
+          const full = g.kind === 'choice' ? g.after : ''
+          for (const earlier of ex.slice(0, at)) {
+            const shown = earlier.kind === 'match' ? '' : [earlier.prompt, earlier.say ?? ''].join(' ')
+            expect([lv, idx, seed, full && shown.includes(full)]).toEqual([lv, idx, seed, false])
+          }
+        }
+      }
     }
   }
 })
