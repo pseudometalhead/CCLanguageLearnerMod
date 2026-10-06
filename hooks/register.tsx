@@ -522,7 +522,7 @@ export const register: Register = on => {
                   <Box {...(desk ? {} : { borderStyle: st === 'current' ? ('double' as const) : ('round' as const), borderColor: color, paddingX: 1 })}>
                     <Button
                       key={`node-${idx}`}
-                      variant={desk ? (st === 'current' ? 'primary' : 'secondary') : undefined}
+                      variant={desk ? 'secondary' : undefined}
                       label={desk ? ` ${face} ` : face}
                       autoFocus={st === 'current' && !showCheck ? true : undefined}
                       onPress={() => openLesson(s.level, idx)}
