@@ -13,6 +13,7 @@ const DAY = 86_400_000
 const PRAISE = ['Super!', 'Prima!', 'Genau!', 'Sehr gut!', 'Toll!', 'Perfekt!', 'Klasse!']
 // How far each node of a unit sits from the left edge, so the path winds like a river.
 const WIND = [4, 9, 12, 9, 4]
+const WIND_NARROW = [0, 2, 4, 2, 0]
 
 const fresh = {
   picked: null,
@@ -124,6 +125,9 @@ export const register: Register = on => {
     const s = await read($, app)
     const info = LEVEL_INFO[s.level]
     const x = s.ex[s.i]
+    // The pane can be narrow: tighten the winding path and stack wide columns.
+    const cols = e.props.bodyColumns || 56
+    const narrow = cols < 46
 
     // ---- audio ----------------------------------------------------------------------------
     const say = async (text: string) => {
@@ -295,7 +299,8 @@ export const register: Register = on => {
       const n = doneCount(s, s.level)
       const unit = UNITS[s.level][s.unit]
       const cur = firstOpen(s, s.level)
-      const wind = s.unit % 2 === 0 ? WIND : [...WIND].reverse()
+      const base = narrow ? WIND_NARROW : WIND
+      const wind = s.unit % 2 === 0 ? base : [...base].reverse()
       const fresh0 = doneCount(s, 'A1') === 0 && s.xp === 0
       const owl = !open
         ? 'This level is locked. Finish the one before, or jump ahead!'
@@ -493,7 +498,7 @@ export const register: Register = on => {
     } else if (x.kind === 'match') {
       const doneRight = s.matched.map(t => x.pairs[t])
       // Long labels (idioms) would overflow two columns, so they stack instead.
-      const stacked = Math.max(...x.left.map(t => t.length)) + Math.max(...x.right.map(t => t.length)) > 40
+      const stacked = Math.max(...x.left.map(t => t.length)) + Math.max(...x.right.map(t => t.length)) > cols - 16
       body = (
         <Box flexDirection={stacked ? 'column' : 'row'}>
           <Box flexDirection="column" marginRight={1}>

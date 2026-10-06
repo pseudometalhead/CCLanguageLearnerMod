@@ -350,3 +350,17 @@ test('a streak lapses after a missed day, and a placement unlock is remembered',
   expect(await ui.find({ text: /Know B1 already/ })).toBeUndefined()
   await ui.unmount()
 })
+
+test('a narrow pane still draws every screen', async ($, on) => {
+  world(on)
+  const ui = await $.ui.mount({ ...PANE, props: { ...PANE.props, bodyColumns: 30 }, surface: 'terminal' })
+  expect(await ui.find({ text: /Greetings/ })).toBeDefined()
+  await ui.press({ key: 'node-0' })
+  await ui.press({ key: 'start' })
+  for (const x of buildLesson('A1', 0, SEED)) {
+    await solve(ui, x)
+    await ui.press({ key: 'continue' })
+  }
+  expect(await ui.find({ text: /LESSON COMPLETE/ })).toBeDefined()
+  await ui.unmount()
+})
