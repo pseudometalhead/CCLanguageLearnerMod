@@ -40,6 +40,17 @@ const right = (a: App): App => {
 }
 const wrong = (a: App, isSoft = false): App => ({ ...a, status: 'wrong', combo: 0, slip: true, gain: 0, hearts: isSoft || isCheck(a) ? a.hearts : a.hearts - 1 })
 
+// Asks for the keys back and puts the ring on the button Enter should act on.
+async function regain($: any) {
+  try {
+    const key = primaryKey(await read($, app))
+    await $.ui.open({ id: PANE, title: APP_NAME, focus: true })
+    if (key) await $.ui.focus({ requestId: PANE, key })
+  } catch {
+    // the pane may already hold the keys, or the surface refuses focus: nothing to do
+  }
+}
+
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
     await $.command.register({ name: 'babel-learning', description: 'Open Babel Learning, the language course (A1 to C1)' })
@@ -53,18 +64,21 @@ export const register: Register = on => {
   })
 
   // The keyboard drifts back to the prompt when the button that held the focus ring is redrawn away (Continue,
-  // Start...). After every press, ask for the keys again and put the ring on the button Enter should act on.
+  // Start...), and the redraw lands after this hook returns: asking for the keys only now finds them still in the pane
+  // and changes nothing. So ask once now and once more a moment later, when the keys have gone back to the prompt.
   on('ui.press', { plugin: 'language-learner' }, async ($, e, next) => {
     const pressed = await next(e)
-    try {
-      const key = primaryKey(await read($, app))
-      // On a desktop a click already gave the pane the keys, and re-opening it after every press is what pulled the
-      // keyboard back to the prompt: only move the ring there. The terminal still needs the pane asked for again.
-      if (e.surface !== 'desktop') await $.ui.open({ id: PANE, title: APP_NAME, focus: true })
-      if (key) await $.ui.focus({ requestId: PANE, key })
-    } catch {
-      // the pane may already hold the keys, or the surface refuses focus: nothing to do
-    }
+    await regain($)
+    void (async () => {
+      for (const ms of [120, 400]) {
+        try {
+          await $.clock.sleep(ms)
+        } catch {
+          return
+        }
+        await regain($)
+      }
+    })()
     return pressed
   })
 

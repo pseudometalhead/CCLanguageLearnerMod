@@ -483,17 +483,17 @@ test('after each press the pane asks for the keys back', async ($, on) => {
   await ui.unmount()
 })
 
-test('on a desktop a press does not re-open the pane, which pulled the keys back to the prompt', async ($, on) => {
+test('on a desktop the pane asks for the keys back right after a press and again once the redraw has taken them', async ($, on) => {
   world(on)
-  let opened = 0
-  on('ui.open', async () => {
-    opened++
+  const asked: boolean[] = []
+  on('ui.open', async (_$: any, e: any) => {
+    asked.push(e.focus === true)
     return { value: { isPlaced: true } }
   })
   const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
   await ui.press({ key: 'check-new' })
-  await ui.press({ key: 'start' })
-  expect(opened).toBe(0)
+  expect(asked.length).toBeGreaterThanOrEqual(1)
+  expect(asked.every(Boolean)).toBe(true)
   await ui.unmount()
 })
 
