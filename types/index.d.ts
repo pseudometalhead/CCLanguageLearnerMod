@@ -6,6 +6,8 @@ export type Exercise =
       title: string
       /** A repeat of an exercise answered wrongly, queued at the end of the lesson. */
       again?: boolean
+      /** Level an exercise of the level check was drawn from. */
+      stage?: Level
       prompt: string
       context?: string
       answer: string
@@ -17,9 +19,9 @@ export type Exercise =
       /** Text in the language being learned, spoken once the exercise is answered. */
       after?: string
     }
-  | { kind: 'match'; title: string; again?: boolean; left: string[]; right: string[]; pairs: Record<string, string> }
-  | { kind: 'spell'; title: string; again?: boolean; prompt: string; answer: string; bank: string[]; say?: string; auto?: boolean; after?: string }
-  | { kind: 'build'; title: string; again?: boolean; prompt: string; answer: string; bank: string[]; say?: string; auto?: boolean; after?: string }
+  | { kind: 'match'; title: string; again?: boolean; stage?: Level; left: string[]; right: string[]; pairs: Record<string, string> }
+  | { kind: 'spell'; title: string; again?: boolean; stage?: Level; prompt: string; answer: string; bank: string[]; say?: string; auto?: boolean; after?: string }
+  | { kind: 'build'; title: string; again?: boolean; stage?: Level; prompt: string; answer: string; bank: string[]; say?: string; auto?: boolean; after?: string }
 
 export type App = {
   /** Course being studied: 'de'. Progress is kept per course. */
@@ -27,7 +29,7 @@ export type App = {
   screen: 'home' | 'intro' | 'play' | 'result' | 'words'
   level: Level
   unit: number
-  /** 0 to 19 within the level; -1 is the placement quiz that unlocks `level`. */
+  /** 0 to 19 within the level; -1 is the placement quiz that unlocks `level`, -2 practice, -3 the level check. */
   lesson: number
   ex: Exercise[]
   i: number
@@ -49,6 +51,9 @@ export type App = {
   streak: number
   lastDay: number
   correct: number
+  /** Level check: first-try answers right in the stage being answered, and stages passed so far. */
+  dhits: number
+  dpass: number
   gained: number
   lastStars: number
   passed: boolean

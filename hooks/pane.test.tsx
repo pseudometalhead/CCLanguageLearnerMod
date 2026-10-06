@@ -2,7 +2,7 @@ import { expect, mock, test } from 'claude-code/testing'
 
 import type { Exercise } from '../types'
 import { german } from './courses/de'
-import { buildLesson, buildPractice, buildTest } from './engine'
+import { buildDiagnostic, buildLesson, buildPractice, buildTest } from './engine'
 
 const NOW = 1_700_000_000_000
 const SEED = NOW % 1_000_003
@@ -264,6 +264,49 @@ test('audio tries each voice name, then the platform default', async ($, on) => 
   expect(tried.slice(0, german.voices.length)).toEqual(german.voices)
   expect(tried[german.voices.length]).toBeUndefined()
   expect(await ui.find({ text: /No audio here/ })).toBeUndefined()
+  await ui.unmount()
+})
+
+test('a new learner can take the level check and lands after the last level they cleared', async ($, on) => {
+  world(on)
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  expect(await ui.find({ text: /Find your level/ })).toBeDefined()
+  await ui.press({ key: 'check-new' })
+  expect(await ui.find({ text: /LEVEL CHECK/ })).toBeDefined()
+  await ui.press({ key: 'start' })
+  const ex = buildDiagnostic(german, SEED)
+  // A1 cleared with every answer right; at A2 two of four wrong ends the check there.
+  for (const [k, x] of ex.entries()) {
+    if (k >= 4 && k < 8 && k % 4 < 2) await blunder(ui, x)
+    else await solve(ui, x)
+    await ui.press({ key: 'continue' })
+    if (k === 7) break
+  }
+  expect(await ui.find({ text: /YOUR LEVEL: A2/ })).toBeDefined()
+  expect(await ui.find({ text: /cleared 1 of 5/ })).toBeDefined()
+  await ui.press({ key: 'begin' })
+  expect(await ui.find({ text: /A2 · Elementary/ })).toBeDefined()
+  expect(await ui.find({ text: /Find your level/ })).toBeUndefined() // has played now
+  await ui.press({ key: 'tab-B1' })
+  expect(await ui.find({ text: /Know B1 already/ })).toBeDefined() // B1 stays locked
+  await ui.unmount()
+})
+
+test('clearing every stage of the level check places you at the top level', async ($, on) => {
+  world(on)
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  await ui.press({ key: 'check-new' })
+  await ui.press({ key: 'start' })
+  for (const x of buildDiagnostic(german, SEED)) {
+    await solve(ui, x)
+    await ui.press({ key: 'continue' })
+  }
+  expect(await ui.find({ text: /YOUR LEVEL: C1/ })).toBeDefined()
+  expect(await ui.find({ text: /cleared 5 of 5/ })).toBeDefined()
+  await ui.press({ key: 'begin' })
+  expect(await ui.find({ text: /C1 · / })).toBeDefined()
+  await ui.press({ key: 'tab-B1' })
+  expect(await ui.find({ text: /Know B1 already/ })).toBeUndefined() // levels below are open
   await ui.unmount()
 })
 

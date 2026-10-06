@@ -37,6 +37,8 @@ export const newApp = (lang: string): App => ({
   streak: 0,
   lastDay: 0,
   correct: 0,
+  dhits: 0,
+  dpass: 0,
   gained: 0,
   lastStars: 0,
   passed: false,
@@ -60,6 +62,15 @@ export const nodeState = (a: App, level: string, idx: number): 'done' | 'current
 export const firstOpen = (a: App, level: string) => {
   for (let i = 0; i < LESSONS_PER_LEVEL; i++) if (starsOf(a, level, i) === 0) return i
   return LESSONS_PER_LEVEL - 1
+}
+
+/** The level a learner starts at after clearing `stages` stages of the level check. */
+export const placedLevel = (stages: number): Level => LEVELS[Math.min(stages, LEVELS.length - 1)]
+
+/** Opens every level up to the placed one, so the learner can start there and still browse below. */
+export const placedTested = (a: App, stages: number): Record<string, boolean> => {
+  const opened = LEVELS.slice(1, LEVELS.indexOf(placedLevel(stages)) + 1)
+  return { ...a.tested, ...Object.fromEntries(opened.map(l => [`${a.lang}:${l}`, true])) }
 }
 
 export const nextTarget = (a: App): [Level, number] | null => {

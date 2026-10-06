@@ -303,6 +303,25 @@ export const buildTest = (course: Course, level: Level, seed: number): Exercise[
   ])
 }
 
+/** Level check: one stage of DIAG_STAGE questions per level, A1 up; pass a stage with DIAG_PASS right to go on. */
+export const DIAG_STAGE = 4
+export const DIAG_PASS = 3
+
+export const buildDiagnostic = (course: Course, seed: number): Exercise[] =>
+  LEVELS.flatMap((level, n) => {
+    const c = (k: number): Ctx => ({ course, level, seed: seed + n * 101 + k * 7 })
+    const words = shuffle(levelWords(course, level), seed + n)
+    const all = shuffle(levelSentences(course, level), seed + n + 1)
+    const gaps = all.filter(hasGap)
+    const sents = all.filter(p => !gaps.includes(p))
+    return compact([
+      pickMeaning(c(1), words[0]),
+      gaps[0] ? cloze(c(2), gaps[0]) : pickWord(c(2), words[1]),
+      translateChoice(c(3), sents[0], false),
+      buildTarget(c(4), sents[1], 2),
+    ]).map(x => ({ ...x, stage: level }))
+  })
+
 export const buildLesson = (course: Course, level: string, idx: number, seed: number): Exercise[] => {
   const { unit, review: isRev, lesson } = lessonInfo(course, level, idx)
   return isRev ? review(course, level, unit, seed) : contentLesson(course, level, lesson!, idx % 5, seed)

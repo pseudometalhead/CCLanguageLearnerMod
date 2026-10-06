@@ -4,7 +4,7 @@ import { LEVELS } from './course'
 import type { Course } from './course'
 import { COURSES } from './courses'
 import { german } from './courses/de'
-import { buildLesson, buildPractice, buildTest, lessonInfo, LESSONS_PER_LEVEL, tokens, unitIndex } from './engine'
+import { buildDiagnostic, buildLesson, buildPractice, buildTest, DIAG_STAGE, lessonInfo, LESSONS_PER_LEVEL, tokens, unitIndex } from './engine'
 
 // Every test below runs once per course, so a new language is checked the moment it is registered.
 const courses = Object.values(COURSES)
@@ -184,6 +184,19 @@ for (const course of courses) test(`[${course.code}] in a unit review the second
           }
         }
       }
+    }
+  }
+})
+
+test('the level check has one stage of valid questions per level, A1 up', () => {
+  for (const c of Object.values(COURSES)) {
+    for (const seed of [1, 42, 977]) {
+      const ex = buildDiagnostic(c, seed)
+      expect(ex.length).toBe(DIAG_STAGE * LEVELS.length)
+      ex.forEach((e, k) => {
+        expect(e.stage).toBe(LEVELS[Math.floor(k / DIAG_STAGE)])
+        check(e, `${c.code} check ${k}`)
+      })
     }
   }
 })

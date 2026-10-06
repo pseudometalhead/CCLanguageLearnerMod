@@ -4,8 +4,8 @@ import type { Register } from 'claude-code'
 import type { App, Level } from '../types'
 import { APP_NAME, LEVELS, LEVEL_INFO } from './course'
 import { COURSES, DEFAULT_COURSE, courseOf } from './courses'
-import { DAY, doneCount, firstOpen, fresh, GOAL, levelOpen, MAX_HEARTS, newApp, nextTarget, nodeState, restore, sk, starsOf, switchCourse } from './progress'
-import { bar, buildLesson, buildPractice, buildTest, heartsRow, isReview, lessonInfo, LESSONS_PER_LEVEL, unitIndex } from './engine'
+import { DAY, doneCount, firstOpen, fresh, GOAL, levelOpen, MAX_HEARTS, newApp, nextTarget, nodeState, placedLevel, placedTested, restore, sk, starsOf, switchCourse } from './progress'
+import { bar, buildDiagnostic, buildLesson, buildPractice, buildTest, DIAG_PASS, DIAG_STAGE, heartsRow, isReview, lessonInfo, LESSONS_PER_LEVEL, unitIndex } from './engine'
 
 const PANE = 'language-learner'
 const STORE = 'app-v3'
@@ -17,6 +17,7 @@ const initial = newApp(DEFAULT_COURSE)
 const app = atom({ plugin: 'language-learner', key: 'app' } as const, initial)
 
 // ---- scoring ------------------------------------------------------------------------------
+const isCheck = (a: App) => a.lesson === -3
 const right = (a: App): App => {
   // A repeat of an earlier mistake earns nothing and does not count towards the combo.
   if (a.ex[a.i].again) return { ...a, status: 'right', gain: 0 }
@@ -24,9 +25,9 @@ const right = (a: App): App => {
   const combo = first ? a.combo + 1 : 0
   // Practice pays a flat bonus at the end, so it cannot be farmed puzzle by puzzle.
   const gain = first && a.lesson !== -2 ? 2 + (combo >= 3 ? 1 : 0) : 0
-  return { ...a, status: 'right', combo, best: Math.max(a.best, combo), gain, correct: a.correct + (first ? 1 : 0), xp: a.xp + gain, gained: a.gained + gain }
+  return { ...a, status: 'right', combo, best: Math.max(a.best, combo), gain, correct: a.correct + (first ? 1 : 0), dhits: a.dhits + (first && isCheck(a) ? 1 : 0), xp: a.xp + gain, gained: a.gained + gain }
 }
-const wrong = (a: App, isSoft = false): App => ({ ...a, status: 'wrong', combo: 0, slip: true, gain: 0, hearts: isSoft ? a.hearts : a.hearts - 1 })
+const wrong = (a: App, isSoft = false): App => ({ ...a, status: 'wrong', combo: 0, slip: true, gain: 0, hearts: isSoft || isCheck(a) ? a.hearts : a.hearts - 1 })
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
@@ -99,6 +100,7 @@ export const register: Register = on => {
       })
     const openWords = () => update($, app, a => ({ ...a, ...fresh, screen: 'words' as const }))
     const openPractice = () => update($, app, a => ({ ...a, ...fresh, screen: 'intro' as const, lesson: -2 }))
+    const openCheck = () => update($, app, a => ({ ...a, ...fresh, screen: 'intro' as const, lesson: -3 }))
     const openTest = () => update($, app, a => ({ ...a, ...fresh, screen: 'intro' as const, lesson: -1 }))
     // Leaving a lesson half way forfeits the XP it earned so far, so it cannot be farmed by quitting.
     const toMap = () =>
@@ -122,8 +124,12 @@ export const register: Register = on => {
         hearts: MAX_HEARTS,
         combo: 0,
         best: 0,
+        dhits: 0,
+        dpass: 0,
         ex:
-          a.lesson === -1
+          a.lesson === -3
+            ? buildDiagnostic(courseOf(a.lang), seed)
+            : a.lesson === -1
             ? buildTest(courseOf(a.lang), a.level, seed)
             : a.lesson === -2
               ? buildPractice(courseOf(a.lang), a.level, Array.from({ length: LESSONS_PER_LEVEL }, (_, i) => i).filter(i => starsOf(a, a.level, i) > 0), seed)
@@ -157,7 +163,7 @@ export const register: Register = on => {
             const stepped = { ...a, matched, sel: null, note: '' }
             return matched.length === q.left.length ? right(stepped) : stepped
           }
-          const hit = { ...a, sel: null, slip: true, combo: 0, note: 'Not a match, try again.', hearts: a.hearts - 1 }
+          const hit = { ...a, sel: null, slip: true, combo: 0, note: 'Not a match, try again.', hearts: isCheck(a) ? a.hearts : a.hearts - 1 }
           return hit.hearts <= 0 ? { ...hit, status: 'wrong' as const } : hit
         }),
       )
@@ -183,9 +189,20 @@ export const register: Register = on => {
     const cont = async () => {
       const cur = await read($, app)
       if (cur.status === 'idle') return
+      const diag = isCheck(cur)
+      if (diag) {
+        // Stages of DIAG_STAGE questions, A1 up: clear one with DIAG_PASS right to go on, miss it and the check ends.
+        const stageEnd = (cur.i + 1) % DIAG_STAGE === 0
+        const cleared = stageEnd && cur.dhits >= DIAG_PASS
+        if (!stageEnd || (cleared && cur.i + 1 < cur.ex.length)) {
+          await update($, app, a => ({ ...a, ...fresh, i: a.i + 1, dhits: stageEnd ? 0 : a.dhits, dpass: cleared ? a.dpass + 1 : a.dpass }))
+          await opened()
+          return
+        }
+      }
       // Duolingo-style: a mistake comes back once at the end of the lesson.
       const missed = cur.status === 'wrong' && !cur.ex[cur.i].again && cur.hearts > 0
-      if (cur.hearts > 0 && (cur.i + 1 < cur.ex.length || missed)) {
+      if (!diag && cur.hearts > 0 && (cur.i + 1 < cur.ex.length || missed)) {
         await update($, app, a => ({ ...a, ...fresh, ex: missed ? [...a.ex, { ...a.ex[a.i], again: true }] : a.ex, i: a.i + 1 }))
         await opened()
         return
@@ -195,15 +212,19 @@ export const register: Register = on => {
       await update($, app, a => {
         const isTest = a.lesson === -1
         const isPractice = a.lesson === -2
-        const passed = isTest ? a.hearts >= 3 : a.hearts > 0
+        const cleared = a.dpass + (diag && a.dhits >= DIAG_PASS ? 1 : 0)
+        const passed = diag || (isTest ? a.hearts >= 3 : a.hearts > 0)
         const stars = !passed ? 0 : isTest ? 3 : a.hearts >= MAX_HEARTS ? 3 : a.hearts >= 3 ? 2 : 1
-        const bonus = !passed ? 0 : isTest ? 20 : isPractice ? 5 : 10 + (a.hearts === MAX_HEARTS ? 5 : 0)
+        const bonus = !passed ? 0 : diag ? 10 : isTest ? 20 : isPractice ? 5 : 10 + (a.hearts === MAX_HEARTS ? 5 : 0)
         const total = a.gained + bonus
         const streak = passed && a.lastDay !== today ? (a.lastDay === today - 1 ? a.streak + 1 : 1) : a.streak
         const key = sk(a.lang, a.level, a.lesson)
         return {
           ...a,
           screen: 'result' as const,
+          level: diag ? placedLevel(cleared) : a.level,
+          unit: diag ? 0 : a.unit,
+          dpass: diag ? cleared : a.dpass,
           passed,
           lastStars: stars,
           xp: a.xp + bonus,
@@ -213,12 +234,13 @@ export const register: Register = on => {
           streak,
           lastDay: passed ? today : a.lastDay,
           stars: !isTest && !isPractice && passed ? { ...a.stars, [key]: Math.max(a.stars[key] ?? 0, stars) } : a.stars,
-          tested: isTest && passed ? { ...a.tested, [`${a.lang}:${a.level}`]: true } : a.tested,
+          tested: diag ? placedTested(a, cleared) : isTest && passed ? { ...a.tested, [`${a.lang}:${a.level}`]: true } : a.tested,
         }
       })
       const a = await read($, app)
       await $.store.set(STORE, { lang: a.lang, sound: a.sound, xp: a.xp, streak: a.streak, lastDay: a.lastDay, dayXp: a.dayXp, goalDay: a.goalDay, stars: a.stars, tested: a.tested })
-      if (a.passed && a.lesson === -1) $.ui.toast(`🚀 ${a.level} ${LEVEL_INFO[a.level].name} unlocked!`)
+      if (diag) $.ui.toast(`🎯 Start at ${a.level} ${LEVEL_INFO[a.level].name}`)
+      else if (a.passed && a.lesson === -1) $.ui.toast(`🚀 ${a.level} ${LEVEL_INFO[a.level].name} unlocked!`)
       else if (a.passed && a.lesson >= 0 && before === 0) {
         const u = unitIndex(a.lesson)
         if ([0, 1, 2, 3, 4].every(p => starsOf(a, a.level, u * 5 + p) > 0)) $.ui.toast(`🏆 Unit complete: ${courseOf(a.lang).levels[a.level][u].title}`)
@@ -263,6 +285,19 @@ export const register: Register = on => {
               {Object.values(COURSES).map(c => (
                 <Button key={`lang-${c.code}`} label={`${c.code === s.lang ? '●' : '○'} ${c.flag} ${c.name}  `} onPress={() => update($, app, a => switchCourse(a, c.code))} />
               ))}
+            </Box>
+          )}
+          {fresh0 && Object.keys(s.tested).every(k => !k.startsWith(`${s.lang}:`)) && (
+            <Box borderStyle="round" borderColor="yellow" paddingX={1} flexDirection="column" marginBottom={1}>
+              <Text bold color="yellow">🎯 New here? Find your level</Text>
+              <Box marginBottom={1}>
+                <Text dimColor>20 questions, A1 upwards. We stop when it gets too hard and start you at the right level. No hearts to lose.</Text>
+              </Box>
+              <Box>
+                <Box borderStyle="round" borderColor="yellow" paddingX={1}>
+                  <Button key="check-new" hotkey="l" label="🎯 Take the level check" onPress={openCheck} />
+                </Box>
+              </Box>
             </Box>
           )}
           <Box marginBottom={1}>
@@ -317,8 +352,11 @@ export const register: Register = on => {
               <Box borderStyle="round" borderColor="gray" paddingX={1} marginRight={1}>
                 <Button key="practice" hotkey="x" label="💪 Practice" onPress={openPractice} />
               </Box>
-              <Box borderStyle="round" borderColor="gray" paddingX={1}>
+              <Box borderStyle="round" borderColor="gray" paddingX={1} marginRight={1}>
                 <Button key="words" hotkey="w" label="📖 Words" onPress={openWords} />
+              </Box>
+              <Box borderStyle="round" borderColor="gray" paddingX={1}>
+                <Button key="check" hotkey="l" label="🎯 Level check" onPress={openCheck} />
               </Box>
             </Box>
           )}
@@ -372,16 +410,19 @@ export const register: Register = on => {
     if (s.screen === 'intro') {
       const isTest = s.lesson === -1
       const isPractice = s.lesson === -2
+      const isDiag = s.lesson === -3
       const { unit, review: isRev, lesson } = lessonInfo(course, s.level, Math.max(0, s.lesson))
       return (
         <Box flexDirection="column">
           {header}
-          <Box borderStyle="double" borderColor={isTest || isPractice ? 'yellow' : isRev ? 'magenta' : info.color} paddingX={1} flexDirection="column" marginBottom={1}>
-            <Text bold color={isTest || isPractice ? 'yellow' : isRev ? 'magenta' : info.color}>
-              {isPractice ? `💪 PRACTICE · ${s.level}` : isTest ? `🚀 PLACEMENT QUIZ → ${s.level}` : isRev ? `🏆 UNIT REVIEW · ${unit.title}` : `${unit.emoji} LESSON ${s.lesson + 1} · ${lesson!.title}`}
+          <Box borderStyle="double" borderColor={isTest || isPractice || isDiag ? 'yellow' : isRev ? 'magenta' : info.color} paddingX={1} flexDirection="column" marginBottom={1}>
+            <Text bold color={isTest || isPractice || isDiag ? 'yellow' : isRev ? 'magenta' : info.color}>
+              {isDiag ? '🎯 LEVEL CHECK' : isPractice ? `💪 PRACTICE · ${s.level}` : isTest ? `🚀 PLACEMENT QUIZ → ${s.level}` : isRev ? `🏆 UNIT REVIEW · ${unit.title}` : `${unit.emoji} LESSON ${s.lesson + 1} · ${lesson!.title}`}
             </Text>
             <Text dimColor>
-              {isPractice
+              {isDiag
+                ? `${DIAG_STAGE * LEVELS.length} questions, ${DIAG_STAGE} per level from A1 up. Get ${DIAG_PASS} of ${DIAG_STAGE} right to move on; it stops when a level is too hard. No hearts, no stars, and you start at the level it finds.`
+                : isPractice
                 ? '10 mixed puzzles from the lessons you have finished. Earns 5 XP, no stars.'
                 : isTest
                 ? `12 questions from ${LEVELS[LEVELS.indexOf(s.level) - 1]}. Make at most 2 mistakes to unlock ${s.level}.`
@@ -390,7 +431,7 @@ export const register: Register = on => {
                   : `${unit.sub} · ${s.level}`}
             </Text>
           </Box>
-          {!isTest && !isPractice && !isRev && (
+          {!isTest && !isPractice && !isDiag && !isRev && (
             <Box flexDirection="column" marginBottom={1}>
               <Text bold>New words <Text dimColor>(tap 🔊 to hear)</Text></Text>
               {lesson!.words.map((w, k) => (
@@ -409,7 +450,7 @@ export const register: Register = on => {
               {unit.lessons.map(l => <Text key={`rv-${l.title}`} dimColor>• {l.title}</Text>)}
             </Box>
           )}
-          {!isTest && !isPractice && (
+          {!isTest && !isPractice && !isDiag && (
             <Box borderStyle="round" borderColor="yellow" paddingX={1} marginBottom={1}>
               <Text>💡 <Text dimColor>{unit.tip}</Text></Text>
             </Box>
@@ -435,6 +476,7 @@ export const register: Register = on => {
     if (s.screen === 'result') {
       const isTest = s.lesson === -1
       const isPractice = s.lesson === -2
+      const isDiag = s.lesson === -3
       const target = nextTarget(s)
       const goal = Math.min(s.dayXp, GOAL)
       return (
@@ -442,12 +484,18 @@ export const register: Register = on => {
           {header}
           <Box borderStyle="double" borderColor={s.passed ? 'green' : 'red'} paddingX={1} flexDirection="column" marginBottom={1}>
             <Text bold color={s.passed ? 'green' : 'red'}>
-              {s.passed ? (isTest ? '🚀 LEVEL UNLOCKED' : isPractice ? '💪 PRACTICE COMPLETE' : '🏆 LESSON COMPLETE') : isTest ? '😕 NOT QUITE, TRY AGAIN' : '💔 OUT OF HEARTS'}
+              {isDiag ? `🎯 YOUR LEVEL: ${s.level} · ${LEVEL_INFO[s.level].name}` : s.passed ? (isTest ? '🚀 LEVEL UNLOCKED' : isPractice ? '💪 PRACTICE COMPLETE' : '🏆 LESSON COMPLETE') : isTest ? '😕 NOT QUITE, TRY AGAIN' : '💔 OUT OF HEARTS'}
             </Text>
-            {!isTest && !isPractice && <Text>{'⭐'.repeat(s.lastStars)}{'☆'.repeat(3 - s.lastStars)}</Text>}
-            <Text>🎯 {s.correct}/{s.ex.filter(q => !q.again).length} first try   ⭐ +{s.gained} XP   🔥 best combo {s.best}</Text>
+            {isDiag && <Text>You cleared {s.dpass} of {LEVELS.length} levels{s.dpass > 0 ? `, up to ${LEVELS[Math.min(s.dpass, LEVELS.length) - 1]}` : ''}. {s.level} is where new material starts; the levels below stay open to browse.</Text>}
+            {!isTest && !isPractice && !isDiag && <Text>{'⭐'.repeat(s.lastStars)}{'☆'.repeat(3 - s.lastStars)}</Text>}
+            {isDiag ? <Text>⭐ +{s.gained} XP</Text> : <Text>🎯 {s.correct}/{s.ex.filter(q => !q.again).length} first try   ⭐ +{s.gained} XP   🔥 best combo {s.best}</Text>}
             <Text dimColor>Daily goal {goal}/{GOAL} <Text color="green">{bar(goal, GOAL, 10)}</Text>{goal >= GOAL ? ' ✅' : ''}</Text>
           </Box>
+          {isDiag && (
+            <Box borderStyle="round" borderColor="green" paddingX={1} marginBottom={1}>
+              <Button key="begin" hotkey="n" label={`Start ${s.level} ▶`} onPress={toMap} />
+            </Box>
+          )}
           {target && (
             <Box borderStyle="round" borderColor="green" paddingX={1} marginBottom={1}>
               <Button key="next" hotkey="n" label={`Next: ${lessonInfo(course, target[0], target[1]).title} ▶`} onPress={() => openLesson(target[0], target[1])} />
@@ -469,7 +517,10 @@ export const register: Register = on => {
     const answered1 = s.status !== 'idle'
     const ok = s.status === 'right'
     const answerText = x.kind === 'match' ? '' : x.answer
-    const isLast = (s.i + 1 >= s.ex.length && !(s.status === 'wrong' && !x.again)) || s.hearts <= 0
+    const isDiag = s.lesson === -3
+    const isLast = isDiag
+      ? (s.i + 1) % DIAG_STAGE === 0 && (s.dhits < DIAG_PASS || s.i + 1 >= s.ex.length)
+      : (s.i + 1 >= s.ex.length && !(s.status === 'wrong' && !x.again)) || s.hearts <= 0
     const shortOpts = x.kind === 'choice' && x.options.every(o => o.length <= 18)
 
     let body
@@ -574,7 +625,7 @@ export const register: Register = on => {
             <Text color={info.color}>{bar(s.i + (answered1 && ok ? 1 : 0), s.ex.length, 16)}</Text>
           </Box>
           <Box marginRight={1}>
-            <Text>{heartsRow(s.hearts, MAX_HEARTS)}</Text>
+            <Text>{isDiag ? `${s.i + 1}/${s.ex.length}` : heartsRow(s.hearts, MAX_HEARTS)}</Text>
           </Box>
           <Button key="sound" label={s.sound ? '🔊' : '🔇'} onPress={() => update($, app, a => ({ ...a, sound: !a.sound }))} />
         </Box>

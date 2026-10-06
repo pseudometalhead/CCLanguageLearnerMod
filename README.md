@@ -19,10 +19,16 @@ Type `/babel-learning` in Claude Code (`/learn` also works). **German, A1 → C1
 3. 5 hearts, combo bonus XP for streaks of correct answers, and the feedback banner cheers you on in German (Super! Prima! Genau!).
 4. Reordering a sentence's words costs no heart, because word order is often free; you just see the model answer.
 
+## Level check
+New here? The map offers a **🎯 Level check** (hotkey **l**; it stays on the map for later). It asks 20 questions in five
+stages, four per level from A1 up. Get 3 of 4 right to move to the next level; it stops when a level is too hard.
+No hearts, no stars. You land on the level after the last one you cleared, with every level up to it opened (the ones
+below stay open to browse). It can't be wrong for long: lessons and the per-level placement quiz still work as before.
+
 ## Keyboard
 The pane opens focused. If the keys do nothing (you pressed Escape, or clicked back into the prompt), click the pane or press
 **ctrl+x** then **tab** to give it the keyboard again. With the pane focused: **1–4** pick an option, **1–9** tap a word chip, **1–5** and **q–t** match pairs, **c** check / continue,
-**u** undo, **p** play the audio, **s** start, **x** practice, **w** words, **n** next lesson, **r** try again, **m** back to the map.
+**u** undo, **p** play the audio, **s** start, **x** practice, **w** words, **l** level check, **n** next lesson, **r** try again, **m** back to the map.
 
 ## Audio
 German is spoken with the system speech synthesizer. The mod tries a German voice by name (macOS **Anna**; Windows

@@ -1,7 +1,7 @@
 import { expect, test } from 'claude-code/testing'
 
 import type { App } from '../types'
-import { doneCount, levelOpen, newApp, nextTarget, nodeState, restore, switchCourse } from './progress'
+import { doneCount, levelOpen, newApp, nextTarget, nodeState, placedLevel, placedTested, restore, switchCourse } from './progress'
 
 const done = (lang: string, level: string, n: number) => Object.fromEntries(Array.from({ length: n }, (_, i) => [`${lang}:${level}:${i}`, 3]))
 const base = (over: Partial<App>): App => ({ ...newApp('de'), ...over })
@@ -66,4 +66,18 @@ test('next lesson follows the lesson, then the next level once it is open', () =
   expect(nextTarget(last)).toEqual(['A2', 0])
   expect(nextTarget({ ...last, lesson: -1 })).toBeNull()
   expect(nextTarget({ ...last, passed: false })).toBeNull()
+})
+
+test('the level check places you after the last stage cleared and opens the levels up to it', () => {
+  expect(placedLevel(0)).toBe('A1')
+  expect(placedLevel(2)).toBe('B1')
+  expect(placedLevel(5)).toBe('C1') // cleared everything: stay on the top level
+  const a = base({})
+  expect(levelOpen({ ...a, tested: placedTested(a, 0) }, 'A2')).toBe(false)
+  const b = { ...a, tested: placedTested(a, 2) }
+  expect(['A2', 'B1'].every(l => levelOpen(b, l))).toBe(true)
+  expect(levelOpen(b, 'B2')).toBe(false)
+  expect(Object.keys(placedTested(a, 5)).sort()).toEqual(['de:A2', 'de:B1', 'de:B2', 'de:C1'])
+  // another course keeps its own locks
+  expect(levelOpen({ ...b, lang: 'fr' }, 'B1')).toBe(false)
 })
