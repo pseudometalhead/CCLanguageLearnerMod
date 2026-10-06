@@ -28,7 +28,21 @@ German is spoken with the system speech synthesizer (voice **Anna**), so real pl
 (System Settings → Accessibility → Spoken Content → System Voice → Manage Voices). Elsewhere the mod shows the German text instead.
 The 🔊/🔇 toggle mutes everything.
 
-## Run and test
+## Install (plug and play)
+
+In Claude Code:
+
+    /plugin marketplace add pseudometalhead/CCLanguageLearnerMod
+    /plugin install language-learner@linguacc
+
+or from a terminal:
+
+    claude plugin marketplace add pseudometalhead/CCLanguageLearnerMod
+    claude plugin install language-learner@linguacc
+
+Then type `/learn`. Update later with `claude plugin marketplace update linguacc`.
+
+## Run from a checkout and test
     claude --plugin-dir /path/to/this/repo
     claude plugin validate .
     claude plugin test .

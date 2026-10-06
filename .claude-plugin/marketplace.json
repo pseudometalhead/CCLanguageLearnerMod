@@ -1,0 +1,15 @@
+{
+  "name": "linguacc",
+  "owner": { "name": "pseudometalhead", "url": "https://github.com/pseudometalhead" },
+  "metadata": { "description": "LinguaCC: a Duolingo-style German course for Claude Code." },
+  "plugins": [
+    {
+      "name": "language-learner",
+      "source": "./",
+      "description": "A Duolingo-style German course in a Claude Code pane: CEFR A1 to C1, 100 lessons, a winding map, a dozen puzzle types, audio, XP, hearts and streaks. Type /learn.",
+      "version": "0.2.0",
+      "category": "education",
+      "tags": ["german", "language-learning", "education", "duolingo", "learning"]
+    }
+  ]
+}

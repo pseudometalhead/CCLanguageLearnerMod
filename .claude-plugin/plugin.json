@@ -1,1 +1,10 @@
-{ "name": "language-learner", "version": "0.1.0", "description": "A Duolingo-style language learning pane: bite-sized lessons, quizzes, XP, hearts and daily streaks. Type /learn.", "types": "./types/index.d.ts" }
+{
+  "name": "language-learner",
+  "version": "0.2.0",
+  "description": "A Duolingo-style German course in a Claude Code pane: CEFR A1 to C1, 100 lessons, a winding map, a dozen puzzle types, audio, XP, hearts and streaks. Type /learn.",
+  "author": { "name": "pseudometalhead", "url": "https://github.com/pseudometalhead" },
+  "homepage": "https://github.com/pseudometalhead/CCLanguageLearnerMod",
+  "repository": "https://github.com/pseudometalhead/CCLanguageLearnerMod",
+  "keywords": ["german", "language-learning", "education", "duolingo"],
+  "types": "./types/index.d.ts"
+}
