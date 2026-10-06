@@ -82,7 +82,7 @@ test('the map starts at A1 with one open lesson and the rest locked', async ($, 
   for (const surface of ['terminal', 'desktop'] as const) {
     const ui = await $.ui.mount({ ...PANE, surface })
     expect(await ui.find({ text: /A1 · Beginner/ })).toBeDefined()
-    expect(await ui.find({ text: /UNIT 1 · 👋 Hallo!/ })).toBeDefined()
+    expect(await ui.find({ text: surface === 'desktop' ? /UNIT 1 · Hallo!/ : /UNIT 1 · 👋 Hallo!/ })).toBeDefined()
     expect(await ui.find({ text: /Greetings/ })).toBeDefined()
     expect(await ui.find({ text: /START/ })).toBeDefined()
     expect(await ui.find({ text: /Willkommen/ })).toBeDefined()
@@ -94,7 +94,7 @@ test('the map starts at A1 with one open lesson and the rest locked', async ($, 
     expect(await ui.find({ text: /Know B1 already/ })).toBeDefined()
     await ui.press({ key: 'tab-A1' })
     await ui.press({ key: 'unit-next' })
-    expect(await ui.find({ text: /UNIT 2 · 🍽️ Essen & Trinken/ })).toBeDefined()
+    expect(await ui.find({ text: surface === 'desktop' ? /UNIT 2 · Essen & Trinken/ : /UNIT 2 · 🍽️ Essen & Trinken/ })).toBeDefined()
     await ui.press({ key: 'unit-prev' })
     await ui.unmount()
   }

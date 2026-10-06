@@ -137,6 +137,8 @@ export const register: Register = on => {
     // Desktop pills are plain black buttons (readable on the dark ground), side by side with no frame between them; the
     // selected one is marked by its ▣ / ● glyph.
     const lift = (_selected: boolean, _key: string, node: any) => node
+    // Fewer emoji on a desktop: text and plain glyphs instead (the terminal keeps its pictures).
+    const plain = (t: string) => (desk ? t.replace(/[\p{Extended_Pictographic}\u200D\uFE0F]/gu, '').replace(/\s+/g, ' ').trim() : t)
     const page = (tree: any) =>
       desk ? (
         <Box flexDirection="column" backgroundColor={th.bg} padding={1} minHeight="100%">
@@ -148,7 +150,7 @@ export const register: Register = on => {
     const act = (key: string, label: string, onPress: () => unknown, o: { hotkey?: string; main?: boolean; tone?: string; focus?: boolean; num?: string; end?: boolean; gap?: boolean } = {}) => {
       const framed = !desk || (o.tone !== undefined && o.tone !== 'gray')
       return (
-        <Box key={`act-${key}`} {...(framed ? { borderStyle: 'round' as const, borderColor: o.tone ?? 'gray', paddingX: 1 } : {})} marginRight={o.end ? 0 : 1} marginBottom={o.gap ? 1 : 0}>
+        <Box key={`act-${key}`} {...(framed ? { borderStyle: 'round' as const, borderColor: tint(o.tone ?? 'gray'), paddingX: 1 } : {})} marginRight={o.end ? 0 : 1} marginBottom={o.gap ? 1 : 0}>
           <Button
             key={key}
             hotkey={o.hotkey}
@@ -199,7 +201,7 @@ export const register: Register = on => {
         if (onWindows) return
         why = `${why}; clip: ${err instanceof Error ? err.message : String(err)}`
       }
-      await update($, app, a => ({ ...a, note: `🔇 No audio here (${why.slice(0, 200) || 'no reason given'}). It says: “${text}”` }))
+      await update($, app, a => ({ ...a, note: `No audio here (${why.slice(0, 200) || 'no reason given'}). It says: “${text}”` }))
     }
     // Says in the pane whether speech and clip playback work here, with the engine's own error if not.
     const testAudio = async () => {
@@ -230,7 +232,7 @@ export const register: Register = on => {
       } catch (err) {
         report.push(`beep: ${(err instanceof Error ? err.message : String(err)).slice(0, 140)}`)
       }
-      await update($, app, a => ({ ...a, note: `🔧 Audio test: ${report.join(' · ')}` }))
+      await update($, app, a => ({ ...a, note: `Audio test: ${report.join(' · ')}` }))
     }
     // Speaks what the exercise now showing asks to hear when it opens.
     const opened = async () => {
@@ -412,11 +414,11 @@ export const register: Register = on => {
     const header = (
       <Box borderStyle="round" borderColor={desk ? th.a1 : 'cyan'} {...(desk ? { backgroundColor: th.card } : {})} paddingX={1} flexDirection="column" marginBottom={desk ? 1 : 0}>
         <Box>
-          <Text bold color={desk ? th.a1 : 'cyan'}>🌍 {APP_NAME} <Text color={ink} dimColor>· {course.name} </Text></Text>
-          {lift(false, 'sound-w', <Button key="sound" variant={desk ? 'primary' : undefined} label={s.sound ? '🔊 on' : '🔇 off'} onPress={() => update($, app, a => ({ ...a, sound: !a.sound }))} />)}
-          {lift(false, 'settings-w', <Button key="settings" hotkey="o" variant={desk ? 'primary' : undefined} label={desk ? '⚙ Settings' : '⚙ Settings (o)'} onPress={openSettings} />)}
+          <Text bold color={desk ? th.a1 : 'cyan'}>{desk ? '' : '🌍 '}{APP_NAME} <Text color={ink} dimColor>· {course.name} </Text></Text>
+          {lift(false, 'sound-w', <Button key="sound" variant={desk ? 'primary' : undefined} label={desk ? (s.sound ? 'Sound on' : 'Sound off') : s.sound ? '🔊 on' : '🔇 off'} onPress={() => update($, app, a => ({ ...a, sound: !a.sound }))} />)}
+          {lift(false, 'settings-w', <Button key="settings" hotkey="o" variant={desk ? 'primary' : undefined} label={desk ? 'Settings' : '⚙ Settings (o)'} onPress={openSettings} />)}
         </Box>
-        <Text color={ink}>🔥 {s.streak}   ⭐ {s.xp}   🎯 {desk ? <Text bold color={th.a2}>{s.dayXp >= GOAL ? 'Daily goal done ✓' : `${s.dayXp}/${GOAL} XP today`}</Text> : <Text>{Math.min(s.dayXp, GOAL)}/{GOAL} <Text color="green">{bar(Math.min(s.dayXp, GOAL), GOAL, 8)}</Text></Text>}</Text>
+        <Text color={ink}>{desk ? `Streak ${s.streak}   XP ${s.xp}   Today: ` : `🔥 ${s.streak}   ⭐ ${s.xp}   🎯 `}{desk ? <Text bold color={th.a2}>{s.dayXp >= GOAL ? 'Daily goal done ✓' : `${s.dayXp}/${GOAL} XP today`}</Text> : <Text>{Math.min(s.dayXp, GOAL)}/{GOAL} <Text color="green">{bar(Math.min(s.dayXp, GOAL), GOAL, 8)}</Text></Text>}</Text>
       </Box>
     )
 
@@ -444,12 +446,12 @@ export const register: Register = on => {
         <Box flexDirection="column">
           {header}
           {showCheck && (
-            <Box borderStyle="round" borderColor="yellow" paddingX={1} flexDirection="column" marginBottom={1}>
-              <Text bold color={tint('yellow')}>🎯 New here? Find your level</Text>
+            <Box borderStyle="round" borderColor={tint('yellow')} paddingX={1} flexDirection="column" marginBottom={1}>
+              <Text bold color={tint('yellow')}>{desk ? '' : '🎯 '}New here? Find your level</Text>
               <Box marginBottom={1}>
                 <Text color={ink} dimColor>20 questions, A1 upwards. We stop when it gets too hard and start you at the right level. No hearts to lose.</Text>
               </Box>
-              <Box>{act('check-new', '🎯 Take the level check', openCheck, { hotkey: 'l', main: true, focus: true, tone: 'yellow', end: true })}</Box>
+              <Box>{act('check-new', plain('🎯 Take the level check'), openCheck, { hotkey: 'l', main: true, focus: true, tone: 'yellow', end: true })}</Box>
             </Box>
           )}
           <Box marginBottom={1}>
@@ -460,25 +462,25 @@ export const register: Register = on => {
                 <Button
                   key={`tab-${lv}`}
                   variant={desk ? 'primary' : undefined}
-                  label={`${lv === s.level ? '▣' : levelOpen(s, lv) ? '□' : '🔒'} ${lv}${desk ? '' : '  '}`}
+                  label={`${lv === s.level ? '▣' : levelOpen(s, lv) ? '□' : desk ? '⊘' : '🔒'} ${lv}${desk ? '' : '  '}`}
                   onPress={() => goLevel(lv)}
                 />,
               )
             ))}
           </Box>
           <Text color={tint(lvlc)} bold>{s.level} · {info.name}  {desk ? '' : bar(n, LESSONS_PER_LEVEL, 10)} {n}/{LESSONS_PER_LEVEL}</Text>
-          <Box marginBottom={1} {...(desk ? { backgroundColor: th.card, paddingX: 1 } : {})}>
-            <Text color={ink} dimColor={!desk}>💬 “{coach}”</Text>
+          <Box marginBottom={1} {...(desk ? { backgroundColor: th.card, borderStyle: 'round' as const, borderColor: th.card, paddingX: 1 } : {})}>
+            <Text color={ink} dimColor={!desk}>{desk ? '' : '💬 '}“{coach}”</Text>
           </Box>
           <Box
-            {...(desk ? { backgroundColor: open ? th.a1 : th.lock, paddingY: 0 } : { borderStyle: 'round' as const, borderColor: open ? lvlc : 'gray' })}
+            {...(desk ? { backgroundColor: open ? th.a1 : th.lock, borderStyle: 'round' as const, borderColor: open ? th.a1 : th.lock } : { borderStyle: 'round' as const, borderColor: open ? lvlc : 'gray' })}
             paddingX={1}
             flexDirection="column"
             marginBottom={1}
           >
             <Box>
               {(!desk || s.unit > 0) && <Button key="unit-prev" label={s.unit > 0 ? '◀ ' : '   '} onPress={() => goUnit(-1)} />}
-              <Text bold color={desk ? (open ? th.on : ink) : tint(open ? lvlc : 'gray')}>{desk && s.unit === 0 ? ' ' : ''}UNIT {s.unit + 1} · {unit.emoji} {unit.title}</Text>
+              <Text bold color={desk ? (open ? th.on : ink) : tint(open ? lvlc : 'gray')}>{desk && s.unit === 0 ? ' ' : ''}UNIT {s.unit + 1} · {desk ? '' : `${unit.emoji} `}{unit.title}</Text>
               {(!desk || s.unit < 3) && <Button key="unit-next" label={s.unit < 3 ? ' ▶' : '  '} onPress={() => goUnit(1)} />}
             </Box>
             <Text color={desk ? (open ? th.on : ink) : ink} dimColor={!desk}>{unit.sub}   {[0, 1, 2, 3].map(u => ([0, 1, 2, 3, 4].every(p => starsOf(s, s.level, u * 5 + p) > 0) ? '●' : u === s.unit ? '◉' : '○')).join(' ')}</Text>
@@ -489,7 +491,7 @@ export const register: Register = on => {
             const rev = isReview(idx)
             const title = lessonInfo(course, s.level, idx).title
             const color = st === 'locked' ? 'gray' : st === 'done' ? 'yellow' : rev ? 'magenta' : lvlc
-            const face = st === 'locked' ? '🔒' : st === 'done' ? (rev ? '👑' : '⭐') : rev ? '🏆' : '▶'
+            const face = desk ? (st === 'locked' ? '⊘' : st === 'done' ? '✓' : rev ? '★' : '▶') : st === 'locked' ? '🔒' : st === 'done' ? (rev ? '👑' : '⭐') : rev ? '🏆' : '▶'
             const got = starsOf(s, s.level, idx)
             return (
               <Box key={`row-${idx}`} flexDirection="column">
@@ -532,14 +534,14 @@ export const register: Register = on => {
           )}
           {open && n > 0 && (
             <Box marginTop={1} flexWrap="wrap">
-              {act('practice', '💪 Practice', openPractice, { hotkey: 'x' })}
-              {act('words', '📖 Words', openWords, { hotkey: 'w' })}
-              {act('check', '🎯 Level check', openCheck, { hotkey: 'l', end: true })}
+              {act('practice', plain('💪 Practice'), openPractice, { hotkey: 'x' })}
+              {act('words', plain('📖 Words'), openWords, { hotkey: 'w' })}
+              {act('check', plain('🎯 Level check'), openCheck, { hotkey: 'l', end: true })}
             </Box>
           )}
           {!open && (
-            <Box borderStyle="round" borderColor="yellow" paddingX={1} flexDirection="column">
-              <Text bold color={tint('yellow')}>🚀 Know {s.level} already?</Text>
+            <Box borderStyle="round" borderColor={tint('yellow')} paddingX={1} flexDirection="column">
+              <Text bold color={tint('yellow')}>{desk ? '' : '🚀 '}Know {s.level} already?</Text>
               <Text color={ink} dimColor>Pass a 12-question placement quiz on {LEVELS[LEVELS.indexOf(s.level) - 1]} (two mistakes allowed).</Text>
               <Button key="test" label="Take the placement quiz ▶" onPress={openTest} />
             </Box>
@@ -553,7 +555,7 @@ export const register: Register = on => {
       return page(
         <Box flexDirection="column">
           <Box borderStyle="round" borderColor={desk ? th.a1 : 'cyan'} {...(desk ? { backgroundColor: th.card } : {})} paddingX={1} flexDirection="column" marginBottom={1}>
-            <Text bold color={desk ? th.a1 : 'cyan'}>⚙ Settings</Text>
+            <Text bold color={desk ? th.a1 : 'cyan'}>{desk ? 'Settings' : '⚙ Settings'}</Text>
           </Box>
           <Text bold color={ink}>Language</Text>
           <Box marginBottom={1}>
@@ -572,10 +574,10 @@ export const register: Register = on => {
           </Box>
           <Text bold color={ink}>Sound</Text>
           <Box marginBottom={1}>
-            {lift(false, 'sound-w', <Button key="sound" variant={desk ? 'primary' : undefined} label={s.sound ? '🔊 on' : '🔇 off'} onPress={() => update($, app, a => ({ ...a, sound: !a.sound }))} />)}
+            {lift(false, 'sound-w', <Button key="sound" variant={desk ? 'primary' : undefined} label={desk ? (s.sound ? 'Sound on' : 'Sound off') : s.sound ? '🔊 on' : '🔇 off'} onPress={() => update($, app, a => ({ ...a, sound: !a.sound }))} />)}
           </Box>
           <Text bold color={ink}>Audio</Text>
-          <Box>{act('audiotest', '🔧 Audio test', testAudio, { hotkey: 'a', end: true })}</Box>
+          <Box>{act('audiotest', plain('🔧 Audio test'), testAudio, { hotkey: 'a', end: true })}</Box>
           {s.note && (
             <Box marginTop={1}>
               <Text color={ink}>{s.note}</Text>
@@ -596,10 +598,10 @@ export const register: Register = on => {
           <Box borderStyle="round" borderColor={lvlc} paddingX={1} flexDirection="column">
             <Box>
               <Button key="unit-prev" label={s.unit > 0 ? '◀ ' : '   '} onPress={() => goUnit(-1)} />
-              <Text bold color={tint(lvlc)}>📖 {s.level} · UNIT {s.unit + 1} · {unit.title}</Text>
+              <Text bold color={tint(lvlc)}>{desk ? '' : '📖 '}{s.level} · UNIT {s.unit + 1} · {unit.title}</Text>
               <Button key="unit-next" label={s.unit < 3 ? ' ▶' : '  '} onPress={() => goUnit(1)} />
             </Box>
-            <Text color={ink} dimColor>{got.length}/4 lessons collected · tap 🔊 to hear a word</Text>
+            <Text color={ink} dimColor>{got.length}/4 lessons collected · tap {desk ? '♪' : '🔊'} to hear a word</Text>
           </Box>
           {got.length === 0 && <Text color={ink} dimColor>Finish a lesson in this unit to collect its words.</Text>}
           {got.map(({ l, p }) => (
@@ -607,7 +609,7 @@ export const register: Register = on => {
               <Text color={ink} bold>{l.title}</Text>
               {l.words.map((w, k) => (
                 <Box key={`ww-${p}-${k}`}>
-                  <Button key={`say-${p}-${k}`} label="🔊 " onPress={() => say(w[0])} />
+                  <Button key={`say-${p}-${k}`} label={desk ? '♪' : '🔊 '} onPress={() => say(w[0])} />
                   <Text bold color={tint(lvlc)}>{w[0]}</Text>
                   <Text color={ink} dimColor>  {w[1]}</Text>
                 </Box>
@@ -630,7 +632,7 @@ export const register: Register = on => {
           {header}
           <Box borderStyle="double" borderColor={isTest || isPractice || isDiag ? 'yellow' : isRev ? 'magenta' : lvlc} paddingX={1} flexDirection="column" marginBottom={1}>
             <Text bold color={tint(isTest || isPractice || isDiag ? 'yellow' : isRev ? 'magenta' : lvlc)}>
-              {isDiag ? '🎯 LEVEL CHECK' : isPractice ? `💪 PRACTICE · ${s.level}` : isTest ? `🚀 PLACEMENT QUIZ → ${s.level}` : isRev ? `🏆 UNIT REVIEW · ${unit.title}` : `${unit.emoji} LESSON ${s.lesson + 1} · ${lesson!.title}`}
+              {plain(isDiag ? '🎯 LEVEL CHECK' : isPractice ? `💪 PRACTICE · ${s.level}` : isTest ? `🚀 PLACEMENT QUIZ → ${s.level}` : isRev ? `🏆 UNIT REVIEW · ${unit.title}` : `${unit.emoji} LESSON ${s.lesson + 1} · ${lesson!.title}`)}
             </Text>
             <Text color={ink} dimColor>
               {isDiag
@@ -646,11 +648,11 @@ export const register: Register = on => {
           </Box>
           {!isTest && !isPractice && !isDiag && !isRev && (
             <Box flexDirection="column" marginBottom={1}>
-              <Text color={ink} bold>New words <Text color={ink} dimColor>(tap 🔊 to hear)</Text></Text>
+              <Text color={ink} bold>New words <Text color={ink} dimColor>(tap {desk ? '♪' : '🔊'} to hear)</Text></Text>
               {lesson!.words.map((w, k) => (
                 <Box key={`wrow-${k}`}>
                   <Box marginRight={1}>
-                    <Button key={`w-${k}`} label="🔊 " onPress={() => say(w[0])} />
+                    <Button key={`w-${k}`} label={desk ? '♪' : '🔊 '} onPress={() => say(w[0])} />
                   </Box>
                   <Text bold color={tint(lvlc)}>{w[0]}</Text>
                   <Text color={ink} dimColor>  {w[1]}</Text>
@@ -664,8 +666,8 @@ export const register: Register = on => {
             </Box>
           )}
           {!isTest && !isPractice && !isDiag && (
-            <Box borderStyle="round" borderColor="yellow" paddingX={1} marginBottom={1}>
-              <Text color={ink}>💡 <Text color={ink} dimColor>{unit.tip}</Text></Text>
+            <Box borderStyle="round" borderColor={tint('yellow')} paddingX={1} marginBottom={1}>
+              <Text color={ink}>{desk ? '' : '💡 '}<Text color={ink} dimColor>{unit.tip}</Text></Text>
             </Box>
           )}
           {s.note && (
@@ -693,12 +695,12 @@ export const register: Register = on => {
           {header}
           <Box borderStyle="double" borderColor={s.passed ? 'green' : 'red'} paddingX={1} flexDirection="column" marginBottom={1}>
             <Text bold color={tint(s.passed ? 'green' : 'red')}>
-              {isDiag ? `🎯 YOUR LEVEL: ${s.level} · ${LEVEL_INFO[s.level].name}` : s.passed ? (isTest ? '🚀 LEVEL UNLOCKED' : isPractice ? '💪 PRACTICE COMPLETE' : '🏆 LESSON COMPLETE') : isTest ? '😕 NOT QUITE, TRY AGAIN' : '💔 OUT OF HEARTS'}
+              {plain(isDiag ? `🎯 YOUR LEVEL: ${s.level} · ${LEVEL_INFO[s.level].name}` : s.passed ? (isTest ? '🚀 LEVEL UNLOCKED' : isPractice ? '💪 PRACTICE COMPLETE' : '🏆 LESSON COMPLETE') : isTest ? '😕 NOT QUITE, TRY AGAIN' : '💔 OUT OF HEARTS')}
             </Text>
             {isDiag && <Text color={ink}>You cleared {s.dpass} of {LEVELS.length} levels{s.dpass > 0 ? `, up to ${LEVELS[Math.min(s.dpass, LEVELS.length) - 1]}` : ''}. {s.level} is where new material starts; the levels below stay open to browse.</Text>}
-            {!isTest && !isPractice && !isDiag && <Text color={ink}>{'⭐'.repeat(s.lastStars)}{'☆'.repeat(3 - s.lastStars)}</Text>}
-            {isDiag ? <Text color={ink}>⭐ +{s.gained} XP</Text> : <Text color={ink}>🎯 {s.correct}/{s.ex.filter(q => !q.again).length} first try   ⭐ +{s.gained} XP   🔥 best combo {s.best}</Text>}
-            <Text color={ink} dimColor>Daily goal {goal}/{GOAL} <Text color={tint('green')}>{bar(goal, GOAL, 10)}</Text>{goal >= GOAL ? ' ✅' : ''}</Text>
+            {!isTest && !isPractice && !isDiag && <Text color={ink}>{(desk ? '★' : '⭐').repeat(s.lastStars)}{'☆'.repeat(3 - s.lastStars)}</Text>}
+            {isDiag ? <Text color={ink}>{desk ? '' : '⭐ '}+{s.gained} XP</Text> : <Text color={ink}>{desk ? '' : '🎯 '}{s.correct}/{s.ex.filter(q => !q.again).length} first try   {desk ? '' : '⭐ '}+{s.gained} XP   {desk ? '' : '🔥 '}best combo {s.best}</Text>}
+            <Text color={ink} dimColor>Daily goal {goal}/{GOAL} <Text color={tint('green')}>{bar(goal, GOAL, 10)}</Text>{goal >= GOAL ? (desk ? ' ✓' : ' ✅') : ''}</Text>
           </Box>
           {isDiag && <Box>{act('begin', `Start ${s.level} ▶`, toMap, { hotkey: 'n', main: true, focus: true, tone: 'green', end: true, gap: true })}</Box>}
           {target && (
@@ -708,7 +710,7 @@ export const register: Register = on => {
           )}
           <Box>
             {act('retry', '↻ Again', () => update($, app, a => ({ ...a, ...fresh, screen: 'intro' as const })), { hotkey: 'r' })}
-            {act('map', '🗺 Map', toMap, { hotkey: 'm', focus: !target && !isDiag, end: true })}
+            {act('map', plain('🗺 Map'), toMap, { hotkey: 'm', focus: !target && !isDiag, end: true })}
           </Box>
         </Box>
       )
@@ -728,10 +730,10 @@ export const register: Register = on => {
     if (x.kind === 'choice') {
       body = (
         <Box flexDirection="column">
-          <Box borderStyle="round" borderColor="gray" paddingX={1} marginBottom={1}>
+          <Box borderStyle="round" borderColor={tint('gray')} paddingX={1} marginBottom={1}>
             {x.say && (
               <Box marginRight={1}>
-                {lift(false, 'play-w', <Button key="play" hotkey="p" variant={desk ? 'primary' : undefined} label="🔊 " onPress={() => say(x.say as string)} />)}
+                {lift(false, 'play-w', <Button key="play" hotkey="p" variant={desk ? 'primary' : undefined} label={desk ? '♪' : '🔊 '} onPress={() => say(x.say as string)} />)}
               </Box>
             )}
             <Text color={ink} bold>{x.prompt}</Text>
@@ -744,7 +746,7 @@ export const register: Register = on => {
           <Box flexDirection={shortOpts ? 'row' : 'column'} flexWrap="wrap">
             {x.options.map((o, n) => {
               const bc = !answered1 ? 'gray' : o === x.answer ? 'green' : o === s.picked ? 'red' : 'gray'
-              const mark = !answered1 ? '' : o === x.answer ? '✅ ' : o === s.picked ? '❌ ' : ''
+              const mark = !answered1 ? '' : o === x.answer ? (desk ? '✓ ' : '✅ ') : o === s.picked ? (desk ? '✕ ' : '❌ ') : ''
               return (
                 act(`opt-${o}`, `${mark}${o}`, () => pick(o), { hotkey: String(n + 1), num: mark ? undefined : String(n + 1), tone: bc, gap: true })
               )
@@ -760,12 +762,12 @@ export const register: Register = on => {
         <Box flexDirection={stacked ? 'column' : 'row'}>
           <Box flexDirection="column" marginRight={1}>
             {x.left.map((t, n) => (
-              act(`l-${t}`, s.matched.includes(t) ? `✅ ${t}` : t, () => tapLeft(t), { hotkey: String(n + 1), num: s.matched.includes(t) ? undefined : String(n + 1), tone: s.matched.includes(t) ? 'green' : s.sel === t ? 'cyan' : 'gray', gap: true, end: true })
+              act(`l-${t}`, s.matched.includes(t) ? `${desk ? '✓' : '✅'} ${t}` : t, () => tapLeft(t), { hotkey: String(n + 1), num: s.matched.includes(t) ? undefined : String(n + 1), tone: s.matched.includes(t) ? 'green' : s.sel === t ? 'cyan' : 'gray', gap: true, end: true })
             ))}
           </Box>
           <Box flexDirection="column">
             {x.right.map((r, n) => (
-              act(`r-${r}`, doneRight.includes(r) ? `✅ ${r}` : r, () => tapRight(r), { hotkey: 'qwert'[n], num: doneRight.includes(r) ? undefined : 'qwert'[n], tone: doneRight.includes(r) ? 'green' : 'gray', gap: true, end: true })
+              act(`r-${r}`, doneRight.includes(r) ? `${desk ? '✓' : '✅'} ${r}` : r, () => tapRight(r), { hotkey: 'qwert'[n], num: doneRight.includes(r) ? undefined : 'qwert'[n], tone: doneRight.includes(r) ? 'green' : 'gray', gap: true, end: true })
             ))}
           </Box>
         </Box>
@@ -774,10 +776,10 @@ export const register: Register = on => {
       const built = s.used.map(k => x.bank[k])
       body = (
         <Box flexDirection="column">
-          <Box borderStyle="round" borderColor="gray" paddingX={1} marginBottom={1}>
+          <Box borderStyle="round" borderColor={tint('gray')} paddingX={1} marginBottom={1}>
             {x.say && (
               <Box marginRight={1}>
-                {lift(false, 'play-w', <Button key="play" hotkey="p" variant={desk ? 'primary' : undefined} label="🔊 " onPress={() => say(x.say as string)} />)}
+                {lift(false, 'play-w', <Button key="play" hotkey="p" variant={desk ? 'primary' : undefined} label={desk ? '♪' : '🔊 '} onPress={() => say(x.say as string)} />)}
               </Box>
             )}
             <Text color={ink} bold>{x.prompt}</Text>
@@ -814,7 +816,7 @@ export const register: Register = on => {
           <Box marginRight={1}>
             <Text color={ink}>{isDiag ? `${s.i + 1}/${s.ex.length}` : heartsRow(s.hearts, MAX_HEARTS)}</Text>
           </Box>
-          {lift(false, 'sound-w', <Button key="sound" variant={desk ? 'primary' : undefined} label={s.sound ? '🔊' : '🔇'} onPress={() => update($, app, a => ({ ...a, sound: !a.sound }))} />)}
+          {lift(false, 'sound-w', <Button key="sound" variant={desk ? 'primary' : undefined} label={desk ? (s.sound ? 'Sound on' : 'Sound off') : s.sound ? '🔊' : '🔇'} onPress={() => update($, app, a => ({ ...a, sound: !a.sound }))} />)}
         </Box>
         <Box marginBottom={1}>
           <Text bold color={tint('magenta')}>{x.again ? '↻ Try again: ' : ''}{x.title}</Text>
@@ -839,9 +841,9 @@ export const register: Register = on => {
         {answered1 && (
           <Box borderStyle="round" borderColor={ok ? 'green' : 'red'} paddingX={1} flexDirection="column" marginTop={1}>
             <Text bold color={tint(ok ? 'green' : 'red')}>
-              {ok ? '✅' : '❌'} {ok ? course.praise[s.i % course.praise.length] : course.oops}
+              {ok ? (desk ? '✓' : '✅') : desk ? '✕' : '❌'} {ok ? course.praise[s.i % course.praise.length] : course.oops}
               {ok && s.gain > 0 ? `  +${s.gain} XP` : ''}
-              {ok && s.combo >= 3 ? `  🔥 ${s.combo} in a row` : ''}
+              {ok && s.combo >= 3 ? `  ${desk ? '' : '🔥 '}${s.combo} in a row` : ''}
             </Text>
             {!ok && answerText !== '' && <Text color={ink}>Correct answer: <Text color={ink} bold>{answerText}</Text></Text>}
             {s.note !== '' && <Text color={ink} dimColor>{s.note}</Text>}
