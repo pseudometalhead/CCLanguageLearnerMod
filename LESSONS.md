@@ -55,8 +55,8 @@ _Possessives: mein (my) and dein (your) take endings like ein: mein Bruder, mein
 | # | Lesson | Words |
 |---|---|---|
 | 11 | Family | die Mutter = mother; der Vater = father; der Bruder = brother; die Schwester = sister; die Familie = family |
-| 12 | People | der Freund = friend; die Freundin = girlfriend; das Kind = child; der Mann = man; die Frau = woman |
-| 13 | Describing | groß = tall; klein = small; alt = old; jung = young; nett = nice |
+| 12 | People | der Freund = friend (male); die Freundin = friend (female); das Kind = child; der Mann = man; die Frau = woman |
+| 13 | Describing | groß = tall, big; klein = small, short; alt = old; jung = young; nett = nice |
 | 14 | Home | das Haus = house; die Wohnung = apartment; das Zimmer = room; die Küche = kitchen; der Garten = garden |
 | 15 | 🏆 Unit review | all 20 words and 8 sentences of the unit |
 
@@ -100,7 +100,7 @@ _Modal verbs (können, müssen, wollen, dürfen) send the second verb to the end
 
 | # | Lesson | Words |
 |---|---|---|
-| 11 | Body | der Kopf = head; der Arm = arm; das Bein = leg; der Bauch = stomach; die Hand = hand |
+| 11 | Body | der Kopf = head; der Arm = arm; das Bein = leg; der Bauch = belly; die Hand = hand |
 | 12 | At the doctor | der Arzt = doctor; krank = sick; die Medizin = medicine; der Termin = appointment; die Schmerzen = pain |
 | 13 | Weather | das Wetter = weather; die Sonne = sun; der Regen = rain; der Schnee = snow; kalt = cold |
 | 14 | Hobbies | das Hobby = hobby; die Musik = music; schwimmen = to swim; lesen = to read; tanzen = to dance |
@@ -138,7 +138,7 @@ _Relative clauses push the verb to the end too: Das ist der Kollege, der im Bür
 | 6 | Professions | der Beruf = profession; der Lehrer = teacher; der Ingenieur = engineer; die Ärztin = female doctor; der Angestellte = employee |
 | 7 | At the office | das Büro = office; die Besprechung = meeting; der Kollege = colleague; die Aufgabe = task; die Frist = deadline |
 | 8 | Applying | die Bewerbung = application; der Lebenslauf = CV; das Vorstellungsgespräch = interview; die Erfahrung = experience; die Stelle = position |
-| 9 | Pay & contracts | das Gehalt = salary; die Beförderung = promotion; die Überstunden = overtime; kündigen = to quit; der Vertrag = contract |
+| 9 | Pay & contracts | das Gehalt = salary; die Beförderung = promotion; die Überstunden = overtime; kündigen = to resign, give notice; der Vertrag = contract |
 | 10 | 🏆 Unit review | all 20 words and 8 sentences of the unit |
 
 ### Unit 3 · Medien & Technik (Media & tech)
@@ -157,9 +157,9 @@ _Polite requests use Konjunktiv II: Könnten Sie mir helfen? Ich hätte gern ein
 
 | # | Lesson | Words |
 |---|---|---|
-| 16 | Delays | die Verspätung = delay; ausfallen = to be cancelled; umsteigen = to change trains; verpassen = to miss; der Anschluss = connecting train |
+| 16 | Delays | die Verspätung = delay; ausfallen = to be cancelled; umsteigen = to change trains; verpassen = to miss; der Anschluss = connection |
 | 17 | Complaints | sich beschweren = to complain; kaputt = broken; der Fehler = mistake; die Erstattung = refund; ersetzen = to replace |
-| 18 | Culture | die Tradition = tradition; das Fest = festival; der Brauch = custom; die Geschichte = history; die Sprache = language |
+| 18 | Culture | die Tradition = tradition; das Fest = festival; der Brauch = custom; die Geschichte = history, story; die Sprache = language |
 | 19 | Polite requests | könnten Sie = could you; ich hätte gern = I would like; würden Sie = would you; es tut mir leid = I am sorry; vielen Dank = many thanks |
 | 20 | 🏆 Unit review | all 20 words and 8 sentences of the unit |
 
@@ -182,7 +182,7 @@ _Unreal conditions use Konjunktiv II: Wenn ich Zeit hätte, würde ich mehr reis
 | # | Lesson | Words |
 |---|---|---|
 | 6 | Environment | die Umwelt = environment; das Klima = climate; der Müll = waste; das Recycling = recycling; die Verschmutzung = pollution |
-| 7 | Energy | die Energie = energy; erneuerbar = renewable; der Verbrauch = consumption; das Kraftwerk = power plant; einsparen = to economize |
+| 7 | Energy | die Energie = energy; erneuerbar = renewable; der Verbrauch = consumption; das Kraftwerk = power plant; einsparen = to save (energy) |
 | 8 | Science | die Forschung = research; die Entdeckung = discovery; die Studie = study; beweisen = to prove; die Theorie = theory |
 | 9 | What if | wenn = if; hätte = would have; wäre = would be; würde = would; andernfalls = otherwise |
 | 10 | 🏆 Unit review | all 20 words and 8 sentences of the unit |
@@ -195,7 +195,7 @@ _Two-part connectors: sowohl … als auch (both … and), entweder … oder (eit
 | 11 | Contrasts | einerseits = on the one hand; andererseits = on the other hand; jedoch = however; folglich = consequently; immerhin = at least |
 | 12 | Claims | behaupten = to claim; bestreiten = to deny; belegen = to substantiate; die Behauptung = assertion; der Beweis = proof |
 | 13 | Cause & effect | die Ursache = cause; die Folge = consequence; verursachen = to cause; bewirken = to bring about; aufgrund = due to |
-| 14 | Comparing | im Vergleich zu = compared to; ähnlich = similar; unterschiedlich = different; vielmehr = on the contrary; hingegen = whereas |
+| 14 | Comparing | im Vergleich zu = compared to; ähnlich = similar; unterschiedlich = different; vielmehr = instead (correcting what was said); hingegen = whereas |
 | 15 | 🏆 Unit review | all 20 words and 8 sentences of the unit |
 
 ### Unit 4 · Beruf & Kultur (Career & culture)
@@ -219,7 +219,7 @@ _Modal particles (eben, halt, doch, mal, wohl) carry attitude rather than meanin
 | 1 | Nuance words | die Nuance = nuance; unerlässlich = essential; bemerkenswert = remarkable; allmählich = gradually; zweifellos = undoubtedly |
 | 2 | Modal particles | eben = simply (particle); halt = just (colloquial particle); doch = but surely (particle); mal = for a moment (particle); wohl = I suppose (particle) |
 | 3 | Formal letters | sehr geehrte = dear (formal); hiermit = hereby; bezüglich = regarding; anbei = enclosed; mit freundlichen Grüßen = kind regards |
-| 4 | Hedging | gewissermaßen = to a certain extent; tendenziell = tends to; vermutlich = presumably; annähernd = approximately; mutmaßlich = allegedly |
+| 4 | Hedging | gewissermaßen = to a certain extent; tendenziell = tends to; vermutlich = presumably; annähernd = approximately; mutmaßlich = presumed, suspected |
 | 5 | 🏆 Unit review | all 20 words and 8 sentences of the unit |
 
 ### Unit 2 · Wissenschaftssprache (Academic German)
@@ -227,10 +227,10 @@ _Academic style prefers nouns and the genitive: Wegen des Regens (because of the
 
 | # | Lesson | Words |
 |---|---|---|
-| 6 | Research | die These = thesis; die Methode = method; die Hypothese = hypothesis; die Erkenntnis = insight; der Zusammenhang = connection |
+| 6 | Research | die These = thesis; die Methode = method; die Hypothese = hypothesis; die Erkenntnis = insight; der Zusammenhang = correlation, link |
 | 7 | Analysis | analysieren = to analyze; hinterfragen = to question; erörtern = to discuss in depth; ableiten = to derive; voraussetzen = to presuppose |
 | 8 | Concessions | wenngleich = albeit; indessen = meanwhile; nichtsdestotrotz = nonetheless; insofern = insofar; ungeachtet = regardless of |
-| 9 | Reported speech | laut = according to; angeblich = supposedly; zufolge = according to (postposition); bekanntlich = as is well known; erklärte = explained |
+| 9 | Reported speech | laut = according to (before the noun); angeblich = supposedly; zufolge = according to (after the noun); bekanntlich = as is well known; erklären = to explain |
 | 10 | 🏆 Unit review | all 20 words and 8 sentences of the unit |
 
 ### Unit 3 · Redewendungen (Idioms)
@@ -241,7 +241,7 @@ _Idioms are never translated word for word. “Die Daumen drücken” literally 
 | 11 | Body idioms | ins Fettnäpfchen treten = to put your foot in it; jemandem die Daumen drücken = to keep your fingers crossed for someone; ein Brett vor dem Kopf haben = to be dense; auf dem Schlauch stehen = to be slow on the uptake; die Nase voll haben = to be fed up |
 | 12 | Animal idioms | da liegt der Hund begraben = that is the crux of it; die Katze im Sack kaufen = to buy a pig in a poke; Schwein haben = to be lucky; einen Vogel haben = to be crazy; den Stier bei den Hörnern packen = to take the bull by the horns |
 | 13 | Money & work | Geld wie Heu haben = to be rolling in money; auf großem Fuß leben = to live extravagantly; den Gürtel enger schnallen = to tighten your belt; in den sauren Apfel beißen = to bite the bullet; Hand in Hand arbeiten = to work hand in hand |
-| 14 | Everyday idioms | Das ist mir Wurst = I do not care; jemanden auf die Palme bringen = to drive someone up the wall; mit der Tür ins Haus fallen = to jump right in; Zeit totschlagen = to kill time; sich aus dem Staub machen = to slip away |
+| 14 | Everyday idioms | Das ist mir Wurst = I do not care; jemanden auf die Palme bringen = to drive someone up the wall; mit der Tür ins Haus fallen = to blurt it out; Zeit totschlagen = to kill time; sich aus dem Staub machen = to slip away |
 | 15 | 🏆 Unit review | all 20 words and 8 sentences of the unit |
 
 ### Unit 4 · Stil & Rhetorik (Style & rhetoric)
