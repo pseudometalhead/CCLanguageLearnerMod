@@ -372,6 +372,21 @@ test('a streak lapses after a missed day, and a placement unlock is remembered',
   await ui.unmount()
 })
 
+test('both commands open the pane focused, so its hotkeys are armed', async ($, on) => {
+  const opened: Array<{ id?: string; focus?: boolean }> = []
+  on('ui.open', async (_$: any, e: any) => {
+    opened.push(e)
+    return { value: { isPlaced: true } }
+  })
+  on('command.register', async () => ({ value: undefined }) as any)
+  for (const command of ['babel-learning', 'learn']) {
+    const r = await ($.command as any).run({ command })
+    expect(JSON.stringify(r)).toMatch(/Babel Learning opened/)
+  }
+  expect(opened.map(o => o.id)).toEqual(['language-learner', 'language-learner'])
+  expect(opened.every(o => o.focus === true)).toBe(true)
+})
+
 test('a narrow pane still draws every screen', async ($, on) => {
   world(on)
   const ui = await $.ui.mount({ ...PANE, props: { ...PANE.props, bodyColumns: 30 }, surface: 'terminal' })

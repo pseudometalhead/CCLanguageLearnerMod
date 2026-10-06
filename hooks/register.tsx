@@ -30,7 +30,8 @@ const wrong = (a: App, isSoft = false): App => ({ ...a, status: 'wrong', combo: 
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
-    await $.command.register({ name: 'learn', description: 'Open the language course (A1 to C1)' })
+    await $.command.register({ name: 'babel-learning', description: 'Open Babel Learning, the language course (A1 to C1)' })
+    await $.command.register({ name: 'learn', description: 'Shortcut for /babel-learning' })
     const saved = (await $.store.get(STORE)) as Partial<App> | undefined
     if (saved) {
       const today = Math.floor((await $.clock.now()) / DAY)
@@ -39,10 +40,14 @@ export const register: Register = on => {
     return next(e)
   })
 
-  on('command.run', { command: 'learn' }, async $ => {
-    await $.ui.open({ id: PANE, title: APP_NAME })
-    return { text: `${APP_NAME} opened. Pick a lesson on the map.` }
-  })
+  // Hotkeys only work while the pane holds the keyboard, so open it focused (Escape hands the keys back;
+  // ctrl+x tab or a click takes them again).
+  for (const command of ['babel-learning', 'learn']) {
+    on('command.run', { command }, async $ => {
+      await $.ui.open({ id: PANE, title: APP_NAME, focus: true })
+      return { text: `${APP_NAME} opened. Pick a lesson on the map. Keys not responding? Click the pane, or press ctrl+x then tab.` }
+    })
+  }
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
     const { Box, Text, Button } = $.ui.resolve(e)
@@ -254,20 +259,22 @@ export const register: Register = on => {
         <Box flexDirection="column">
           {header}
           {Object.keys(COURSES).length > 1 && (
-            <Box>
+            <Box marginBottom={1}>
               {Object.values(COURSES).map(c => (
                 <Button key={`lang-${c.code}`} label={`${c.code === s.lang ? '●' : '○'} ${c.flag} ${c.name}  `} onPress={() => update($, app, a => switchCourse(a, c.code))} />
               ))}
             </Box>
           )}
-          <Box>
+          <Box marginBottom={1}>
             {LEVELS.map(lv => (
               <Button key={`tab-${lv}`} label={`${lv === s.level ? '▣' : levelOpen(s, lv) ? '□' : '🔒'} ${lv}  `} onPress={() => goLevel(lv)} />
             ))}
           </Box>
           <Text color={info.color} bold>{s.level} · {info.name}  {bar(n, LESSONS_PER_LEVEL, 10)} {n}/{LESSONS_PER_LEVEL}</Text>
-          <Text dimColor>💬 “{coach}”</Text>
-          <Box borderStyle="round" borderColor={open ? info.color : 'gray'} paddingX={1} flexDirection="column">
+          <Box marginBottom={1}>
+            <Text dimColor>💬 “{coach}”</Text>
+          </Box>
+          <Box borderStyle="round" borderColor={open ? info.color : 'gray'} paddingX={1} flexDirection="column" marginBottom={1}>
             <Box>
               <Button key="unit-prev" label={s.unit > 0 ? '◀ ' : '   '} onPress={() => goUnit(-1)} />
               <Text bold color={open ? info.color : 'gray'}>UNIT {s.unit + 1} · {unit.emoji} {unit.title}</Text>
@@ -369,7 +376,7 @@ export const register: Register = on => {
       return (
         <Box flexDirection="column">
           {header}
-          <Box borderStyle="double" borderColor={isTest || isPractice ? 'yellow' : isRev ? 'magenta' : info.color} paddingX={1} flexDirection="column">
+          <Box borderStyle="double" borderColor={isTest || isPractice ? 'yellow' : isRev ? 'magenta' : info.color} paddingX={1} flexDirection="column" marginBottom={1}>
             <Text bold color={isTest || isPractice ? 'yellow' : isRev ? 'magenta' : info.color}>
               {isPractice ? `💪 PRACTICE · ${s.level}` : isTest ? `🚀 PLACEMENT QUIZ → ${s.level}` : isRev ? `🏆 UNIT REVIEW · ${unit.title}` : `${unit.emoji} LESSON ${s.lesson + 1} · ${lesson!.title}`}
             </Text>
@@ -384,11 +391,13 @@ export const register: Register = on => {
             </Text>
           </Box>
           {!isTest && !isPractice && !isRev && (
-            <Box flexDirection="column">
+            <Box flexDirection="column" marginBottom={1}>
               <Text bold>New words <Text dimColor>(tap 🔊 to hear)</Text></Text>
               {lesson!.words.map((w, k) => (
                 <Box key={`wrow-${k}`}>
-                  <Button key={`w-${k}`} label="🔊 " onPress={() => say(w[0])} />
+                  <Box marginRight={1}>
+                    <Button key={`w-${k}`} label="🔊 " onPress={() => say(w[0])} />
+                  </Box>
                   <Text bold color={info.color}>{w[0]}</Text>
                   <Text dimColor>  {w[1]}</Text>
                 </Box>
@@ -396,16 +405,20 @@ export const register: Register = on => {
             </Box>
           )}
           {isRev && (
-            <Box flexDirection="column">
+            <Box flexDirection="column" marginBottom={1}>
               {unit.lessons.map(l => <Text key={`rv-${l.title}`} dimColor>• {l.title}</Text>)}
             </Box>
           )}
           {!isTest && !isPractice && (
-            <Box borderStyle="round" borderColor="yellow" paddingX={1}>
+            <Box borderStyle="round" borderColor="yellow" paddingX={1} marginBottom={1}>
               <Text>💡 <Text dimColor>{unit.tip}</Text></Text>
             </Box>
           )}
-          {s.note && <Text color="red">{s.note}</Text>}
+          {s.note && (
+            <Box marginBottom={1}>
+              <Text color="red">{s.note}</Text>
+            </Box>
+          )}
           <Box>
             <Box borderStyle="round" borderColor="green" paddingX={1} marginRight={1}>
               <Button key="start" hotkey="s" label="▶ Start" onPress={begin} />
@@ -427,7 +440,7 @@ export const register: Register = on => {
       return (
         <Box flexDirection="column">
           {header}
-          <Box borderStyle="double" borderColor={s.passed ? 'green' : 'red'} paddingX={1} flexDirection="column">
+          <Box borderStyle="double" borderColor={s.passed ? 'green' : 'red'} paddingX={1} flexDirection="column" marginBottom={1}>
             <Text bold color={s.passed ? 'green' : 'red'}>
               {s.passed ? (isTest ? '🚀 LEVEL UNLOCKED' : isPractice ? '💪 PRACTICE COMPLETE' : '🏆 LESSON COMPLETE') : isTest ? '😕 NOT QUITE, TRY AGAIN' : '💔 OUT OF HEARTS'}
             </Text>
@@ -436,7 +449,7 @@ export const register: Register = on => {
             <Text dimColor>Daily goal {goal}/{GOAL} <Text color="green">{bar(goal, GOAL, 10)}</Text>{goal >= GOAL ? ' ✅' : ''}</Text>
           </Box>
           {target && (
-            <Box borderStyle="round" borderColor="green" paddingX={1}>
+            <Box borderStyle="round" borderColor="green" paddingX={1} marginBottom={1}>
               <Button key="next" hotkey="n" label={`Next: ${lessonInfo(course, target[0], target[1]).title} ▶`} onPress={() => openLesson(target[0], target[1])} />
             </Box>
           )}
@@ -463,17 +476,25 @@ export const register: Register = on => {
     if (x.kind === 'choice') {
       body = (
         <Box flexDirection="column">
-          <Box borderStyle="round" borderColor="gray" paddingX={1}>
-            {x.say && <Button key="play" hotkey="p" label="🔊 " onPress={() => say(x.say as string)} />}
+          <Box borderStyle="round" borderColor="gray" paddingX={1} marginBottom={1}>
+            {x.say && (
+              <Box marginRight={1}>
+                <Button key="play" hotkey="p" label="🔊 " onPress={() => say(x.say as string)} />
+              </Box>
+            )}
             <Text bold>{x.prompt}</Text>
           </Box>
-          {x.context && <Text dimColor>{x.context}</Text>}
+          {x.context && (
+            <Box marginBottom={1}>
+              <Text dimColor>{x.context}</Text>
+            </Box>
+          )}
           <Box flexDirection={shortOpts ? 'row' : 'column'} flexWrap="wrap">
             {x.options.map((o, n) => {
               const bc = !answered1 ? 'gray' : o === x.answer ? 'green' : o === s.picked ? 'red' : 'gray'
               const mark = !answered1 ? '' : o === x.answer ? '✅ ' : o === s.picked ? '❌ ' : ''
               return (
-                <Box key={`ob-${o}`} borderStyle="round" borderColor={bc} paddingX={1} marginRight={1}>
+                <Box key={`ob-${o}`} borderStyle="round" borderColor={bc} paddingX={1} marginRight={1} marginBottom={1}>
                   <Button key={`opt-${o}`} hotkey={String(n + 1)} label={`${mark || `${n + 1} `}${o}`} onPress={() => pick(o)} />
                 </Box>
               )
@@ -489,14 +510,14 @@ export const register: Register = on => {
         <Box flexDirection={stacked ? 'column' : 'row'}>
           <Box flexDirection="column" marginRight={1}>
             {x.left.map((t, n) => (
-              <Box key={`lb-${t}`} borderStyle="round" borderColor={s.matched.includes(t) ? 'green' : s.sel === t ? 'cyan' : 'gray'} paddingX={1}>
+              <Box key={`lb-${t}`} borderStyle="round" borderColor={s.matched.includes(t) ? 'green' : s.sel === t ? 'cyan' : 'gray'} paddingX={1} marginBottom={1}>
                 <Button key={`l-${t}`} hotkey={String(n + 1)} label={s.matched.includes(t) ? `✅ ${t}` : `${n + 1} ${t}`} onPress={() => tapLeft(t)} />
               </Box>
             ))}
           </Box>
           <Box flexDirection="column">
             {x.right.map((r, n) => (
-              <Box key={`rb-${r}`} borderStyle="round" borderColor={doneRight.includes(r) ? 'green' : 'gray'} paddingX={1}>
+              <Box key={`rb-${r}`} borderStyle="round" borderColor={doneRight.includes(r) ? 'green' : 'gray'} paddingX={1} marginBottom={1}>
                 <Button key={`r-${r}`} hotkey={'qwert'[n]} label={doneRight.includes(r) ? `✅ ${r}` : `${'qwert'[n]} ${r}`} onPress={() => tapRight(r)} />
               </Box>
             ))}
@@ -507,17 +528,21 @@ export const register: Register = on => {
       const built = s.used.map(k => x.bank[k])
       body = (
         <Box flexDirection="column">
-          <Box borderStyle="round" borderColor="gray" paddingX={1}>
-            {x.say && <Button key="play" hotkey="p" label="🔊 " onPress={() => say(x.say as string)} />}
+          <Box borderStyle="round" borderColor="gray" paddingX={1} marginBottom={1}>
+            {x.say && (
+              <Box marginRight={1}>
+                <Button key="play" hotkey="p" label="🔊 " onPress={() => say(x.say as string)} />
+              </Box>
+            )}
             <Text bold>{x.prompt}</Text>
           </Box>
-          <Box borderStyle="round" borderColor={ok ? 'green' : answered1 ? 'red' : 'cyan'} paddingX={1} minHeight={3}>
+          <Box borderStyle="round" borderColor={ok ? 'green' : answered1 ? 'red' : 'cyan'} paddingX={1} minHeight={3} marginBottom={1}>
             <Text>{built.length ? built.join(' ') : x.kind === 'spell' ? '_ _ _' : '…'}</Text>
           </Box>
           <Box flexWrap="wrap">
             {x.bank.map((w, k) =>
               s.used.includes(k) ? null : (
-                <Box key={`cb-${k}`} borderStyle="round" borderColor="gray" paddingX={1} marginRight={1}>
+                <Box key={`cb-${k}`} borderStyle="round" borderColor="gray" paddingX={1} marginRight={1} marginBottom={1}>
                   <Button key={`b-${k}`} hotkey={k < 9 ? String(k + 1) : undefined} label={k < 9 ? `${k + 1} ${w}` : w} onPress={() => tapBank(k)} />
                 </Box>
               ),
@@ -541,17 +566,29 @@ export const register: Register = on => {
 
     return (
       <Box flexDirection="column">
-        <Box>
-          <Button key="quit" label="✕ " onPress={toMap} />
-          <Text color={info.color}>{bar(s.i + (answered1 && ok ? 1 : 0), s.ex.length, 16)}</Text>
-          <Text>  {heartsRow(s.hearts, MAX_HEARTS)} </Text>
+        <Box marginBottom={1}>
+          <Box marginRight={1}>
+            <Button key="quit" label="✕ " onPress={toMap} />
+          </Box>
+          <Box marginRight={1}>
+            <Text color={info.color}>{bar(s.i + (answered1 && ok ? 1 : 0), s.ex.length, 16)}</Text>
+          </Box>
+          <Box marginRight={1}>
+            <Text>{heartsRow(s.hearts, MAX_HEARTS)}</Text>
+          </Box>
           <Button key="sound" label={s.sound ? '🔊' : '🔇'} onPress={() => update($, app, a => ({ ...a, sound: !a.sound }))} />
         </Box>
-        <Text bold color="magenta">{x.again ? '↻ Try again: ' : ''}{x.title}</Text>
+        <Box marginBottom={1}>
+          <Text bold color="magenta">{x.again ? '↻ Try again: ' : ''}{x.title}</Text>
+        </Box>
         {body}
-        {!answered1 && s.note && <Text color="red">{s.note}</Text>}
+        {!answered1 && s.note && (
+          <Box marginTop={1}>
+            <Text color="red">{s.note}</Text>
+          </Box>
+        )}
         {answered1 && (
-          <Box borderStyle="round" borderColor={ok ? 'green' : 'red'} paddingX={1} flexDirection="column">
+          <Box borderStyle="round" borderColor={ok ? 'green' : 'red'} paddingX={1} flexDirection="column" marginTop={1}>
             <Text bold color={ok ? 'green' : 'red'}>
               {ok ? '✅' : '❌'} {ok ? course.praise[s.i % course.praise.length] : course.oops}
               {ok && s.gain > 0 ? `  +${s.gain} XP` : ''}

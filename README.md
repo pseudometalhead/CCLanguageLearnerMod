@@ -1,6 +1,6 @@
 # Babel Learning — a Duolingo-style language course for Claude Code
 
-Type `/learn` in Claude Code. **German, A1 → C1**, 20 lessons per level (100 in all).
+Type `/babel-learning` in Claude Code (`/learn` also works). **German, A1 → C1**, 20 lessons per level (100 in all).
 
 ## The map
 - Five levels (A1 Beginner … C1 Advanced), each with **4 units × 5 nodes**: four lessons and a 🏆 unit review.
@@ -20,7 +20,8 @@ Type `/learn` in Claude Code. **German, A1 → C1**, 20 lessons per level (100 i
 4. Reordering a sentence's words costs no heart, because word order is often free; you just see the model answer.
 
 ## Keyboard
-With the pane focused: **1–4** pick an option, **1–9** tap a word chip, **1–5** and **q–t** match pairs, **c** check / continue,
+The pane opens focused. If the keys do nothing (you pressed Escape, or clicked back into the prompt), click the pane or press
+**ctrl+x** then **tab** to give it the keyboard again. With the pane focused: **1–4** pick an option, **1–9** tap a word chip, **1–5** and **q–t** match pairs, **c** check / continue,
 **u** undo, **p** play the audio, **s** start, **x** practice, **w** words, **n** next lesson, **r** try again, **m** back to the map.
 
 ## Audio
@@ -43,7 +44,7 @@ or from a terminal:
     claude plugin marketplace add pseudometalhead/CCLanguageLearnerMod
     claude plugin install language-learner@babel-learning
 
-Then type `/learn`. Update later with `claude plugin marketplace update babel-learning`.
+Then type `/babel-learning` (or `/learn`). Update later with `claude plugin marketplace update babel-learning`.
 
 ## Adding a language
 
