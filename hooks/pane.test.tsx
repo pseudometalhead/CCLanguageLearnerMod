@@ -256,7 +256,7 @@ test('the audio test reports what works here and the engine’s own error when i
   on('audio.play', async () => ({ value: undefined }))
   const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
   await ui.press({ key: 'audiotest' })
-  expect(await ui.find({ text: /speech: no synthesizer on this platform/ })).toBeDefined()
+  expect(await ui.find({ text: /speech: .*no implementation for audio\.speak/ })).toBeDefined()
   expect(await ui.find({ text: /beep: played/ })).toBeDefined()
   await ui.unmount()
 })

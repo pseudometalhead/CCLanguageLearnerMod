@@ -28,9 +28,11 @@ below stay open to browse). It can't be wrong for long: lessons and the per-leve
 ## Keyboard
 The pane opens focused. If the keys do nothing (you pressed Escape, or clicked back into the prompt), click the pane or press
 **ctrl+x** then **tab** to give it the keyboard again. With the pane focused: **1–4** pick an option, **1–9** tap a word chip, **1–5** and **q–t** match pairs, **c** check / continue,
-**u** undo, **p** play the audio, **s** start, **x** practice, **w** words, **l** level check, **n** next lesson, **r** try again, **m** back to the map.
+**Enter** acts on the highlighted button (Start, Check, Continue, Next); Tab or the arrows move the highlight. **u** undo, **p** play the audio, **s** start, **x** practice, **w** words, **l** level check, **n** next lesson, **r** try again, **m** back to the map.
 
 ## Audio
+No sound? The map has a **🔧 Audio test** button (hotkey **a**): it tries speech and a short beep and shows the exact error. Claude Code's own docs only promise speech on macOS (`say`) and clip playback via `afplay`, so on Windows the app may have no speech at all.
+
 German is spoken with the system speech synthesizer. The mod tries a German voice by name (macOS **Anna**; Windows
 **Microsoft Hedda** / **Katja** / **Stefan**), then falls back to your system's default voice, which may speak German with
 the wrong accent. Install a German voice for the best result (macOS: System Settings → Accessibility → Spoken Content →

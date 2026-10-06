@@ -287,6 +287,8 @@ export const register: Register = on => {
       const base = narrow ? WIND_NARROW : WIND
       const wind = s.unit % 2 === 0 ? base : [...base].reverse()
       const fresh0 = LEVELS.every(l => doneCount(s, l) === 0)
+      // Enter acts on the focus ring's start: the level check for a new learner, else the lesson to play next.
+      const showCheck = fresh0 && Object.keys(s.tested).every(k => !k.startsWith(`${s.lang}:`))
       const coach = !open
         ? 'This level is locked. Finish the one before, or jump ahead!'
         : fresh0
@@ -306,7 +308,7 @@ export const register: Register = on => {
               ))}
             </Box>
           )}
-          {fresh0 && Object.keys(s.tested).every(k => !k.startsWith(`${s.lang}:`)) && (
+          {showCheck && (
             <Box borderStyle="round" borderColor="yellow" paddingX={1} flexDirection="column" marginBottom={1}>
               <Text bold color="yellow">🎯 New here? Find your level</Text>
               <Box marginBottom={1}>
@@ -314,7 +316,7 @@ export const register: Register = on => {
               </Box>
               <Box>
                 <Box borderStyle="round" borderColor="yellow" paddingX={1}>
-                  <Button key="check-new" hotkey="l" label="🎯 Take the level check" onPress={openCheck} />
+                  <Button key="check-new" hotkey="l" autoFocus label="🎯 Take the level check" onPress={openCheck} />
                 </Box>
               </Box>
             </Box>
@@ -353,7 +355,7 @@ export const register: Register = on => {
                 )}
                 <Box marginLeft={wind[p]}>
                   <Box borderStyle={st === 'current' ? 'double' : 'round'} borderColor={color} paddingX={1}>
-                    <Button key={`node-${idx}`} label={face} onPress={() => openLesson(s.level, idx)} />
+                    <Button key={`node-${idx}`} label={face} autoFocus={st === 'current' && !showCheck ? true : undefined} onPress={() => openLesson(s.level, idx)} />
                   </Box>
                   <Box flexDirection="column" marginLeft={1}>
                     <Text bold={st !== 'locked'} color={color}>{title}</Text>
@@ -490,7 +492,7 @@ export const register: Register = on => {
           )}
           <Box>
             <Box borderStyle="round" borderColor="green" paddingX={1} marginRight={1}>
-              <Button key="start" hotkey="s" label="▶ Start" onPress={begin} />
+              <Button key="start" hotkey="s" autoFocus label="▶ Start" onPress={begin} />
             </Box>
             <Box borderStyle="round" borderColor="gray" paddingX={1}>
               <Button key="back" hotkey="m" label="← Map" onPress={toMap} />
@@ -521,12 +523,12 @@ export const register: Register = on => {
           </Box>
           {isDiag && (
             <Box borderStyle="round" borderColor="green" paddingX={1} marginBottom={1}>
-              <Button key="begin" hotkey="n" label={`Start ${s.level} ▶`} onPress={toMap} />
+              <Button key="begin" hotkey="n" autoFocus label={`Start ${s.level} ▶`} onPress={toMap} />
             </Box>
           )}
           {target && (
             <Box borderStyle="round" borderColor="green" paddingX={1} marginBottom={1}>
-              <Button key="next" hotkey="n" label={`Next: ${lessonInfo(course, target[0], target[1]).title} ▶`} onPress={() => openLesson(target[0], target[1])} />
+              <Button key="next" hotkey="n" autoFocus label={`Next: ${lessonInfo(course, target[0], target[1]).title} ▶`} onPress={() => openLesson(target[0], target[1])} />
             </Box>
           )}
           <Box>
@@ -534,7 +536,7 @@ export const register: Register = on => {
               <Button key="retry" hotkey="r" label="↻ Again" onPress={() => update($, app, a => ({ ...a, ...fresh, screen: 'intro' as const }))} />
             </Box>
             <Box borderStyle="round" borderColor="gray" paddingX={1}>
-              <Button key="map" hotkey="m" label="🗺 Map" onPress={toMap} />
+              <Button key="map" hotkey="m" autoFocus={!target && !isDiag ? true : undefined} label="🗺 Map" onPress={toMap} />
             </Box>
           </Box>
         </Box>
@@ -634,7 +636,7 @@ export const register: Register = on => {
               </Box>
               {s.used.length > 0 && (
                 <Box borderStyle="round" borderColor="green" paddingX={1}>
-                  <Button key="check" hotkey="c" label="✔ Check" onPress={check} />
+                  <Button key="check" hotkey="c" autoFocus label="✔ Check" onPress={check} />
                 </Box>
               )}
             </Box>
@@ -666,6 +668,17 @@ export const register: Register = on => {
             <Text color="red">{s.note}</Text>
           </Box>
         )}
+        {!answered1 && (
+          <Box marginTop={1}>
+            <Text dimColor>
+              {x.kind === 'choice'
+                ? `Press 1–${x.options.length} to answer${x.say ? ', p to hear it again' : ''}.`
+                : x.kind === 'match'
+                  ? 'Press a number for a word on the left, then a letter (q w e r t) for its match.'
+                  : 'Press a number to pick a word, u to undo, then Enter to check.'}
+            </Text>
+          </Box>
+        )}
         {answered1 && (
           <Box borderStyle="round" borderColor={ok ? 'green' : 'red'} paddingX={1} flexDirection="column" marginTop={1}>
             <Text bold color={ok ? 'green' : 'red'}>
@@ -675,7 +688,8 @@ export const register: Register = on => {
             </Text>
             {!ok && answerText !== '' && <Text>Correct answer: <Text bold>{answerText}</Text></Text>}
             {s.note !== '' && <Text dimColor>{s.note}</Text>}
-            <Button key="continue" hotkey="c" label={isLast ? '▶ Finish' : '▶ Continue'} onPress={cont} />
+            <Text dimColor>Press Enter to continue.</Text>
+            <Button key="continue" hotkey="c" autoFocus label={isLast ? '▶ Finish' : '▶ Continue'} onPress={cont} />
           </Box>
         )}
       </Box>
