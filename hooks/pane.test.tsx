@@ -497,6 +497,18 @@ test('on a desktop the pane asks for the keys back right after a press and again
   await ui.unmount()
 })
 
+test('the desktop pane draws its yellow Duolingo look on every screen', async ($, on) => {
+  world(on)
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  expect(await ui.find({ text: /UNIT 1/ })).toBeDefined()
+  await ui.press({ key: 'check-new' })
+  expect(await ui.find({ text: /Find your level|Level check|Placement|Check/i })).toBeDefined()
+  await ui.press({ key: 'start' })
+  await solve(ui, buildDiagnostic(german, SEED)[0])
+  expect(await ui.find({ text: /Press Enter to continue|Continue/i })).toBeDefined()
+  await ui.unmount()
+})
+
 test('the language switcher moves between German and French, each with its own map and audio clips', async ($, on) => {
   mock.clock(on, { now: NOW })
   mock.store(on)
