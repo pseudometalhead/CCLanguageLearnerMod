@@ -99,9 +99,9 @@ export const french: Course = {
       tip: 'Talk about the near future with aller + infinitive: L’année prochaine, je vais voyager en Italie.',
       lessons: [
         L('Looking back', [['la semaine dernière', 'last week'], ['déjà', 'already'], ['pas encore', 'not yet'], ['autrefois', 'back then'], ['il y a un an', 'a year ago']], ['J’ai [déjà] visité Berlin.', 'I have already visited Berlin.'], ['La semaine dernière, j’ai vu un film.', 'Last week I watched a film.']),
-        L('Plans', [['prévoir', 'to plan'], ['visiter', 'to visit'], ['le voyage', 'trip'], ['les vacances', 'vacation'], ['espérer', 'to hope']], ['Nous [prévoyons] un voyage en Italie.', 'We are planning a trip to Italy.'], ['J’espère qu’il fera beau pendant les vacances.', 'I hope the weather will be nice during the vacation.']),
+        L('Plans', [['prévoir', 'to plan'], ['visiter', 'to visit'], ['le voyage', 'trip'], ['les vacances', 'vacation'], ['espérer', 'to hope']], ['Nous [prévoyons] un voyage en Italie.', 'We are planning a trip to Italy.'], ['J’espère qu’il va faire beau pendant les vacances.', 'I hope the weather will be nice during the vacation.']),
         L('Invitations', [['l’invitation', 'invitation'], ['inviter', 'to invite'], ['venir', 'to come'], ['malheureusement', 'unfortunately'], ['la fête', 'party']], ['Merci pour votre [invitation] !', 'Thanks for your invitation!'], ['Malheureusement, je n’ai pas le temps samedi.', 'Unfortunately I have no time on Saturday.']),
-        L('Feelings', [['heureux', 'happy'], ['triste', 'sad'], ['fatigué', 'tired'], ['en colère', 'angry'], ['enthousiaste', 'enthusiastic']], ['Elle était [heureuse] parce qu’il avait téléphoné.', 'She was happy because he had called.'], ['Je suis très fatigué aujourd’hui.', 'I am very tired today.']),
+        L('Feelings', [['heureux', 'happy'], ['triste', 'sad'], ['fatigué', 'tired'], ['en colère', 'angry'], ['enthousiaste', 'enthusiastic']], ['Elle est [heureuse] parce qu’il a téléphoné.', 'She is happy because he called.'], ['Je suis très fatigué aujourd’hui.', 'I am very tired today.']),
       ],
     },
   ],
@@ -121,8 +121,8 @@ export const french: Course = {
       tip: 'Relative pronouns: qui (subject), que (object), où (place). C’est le collègue qui travaille au bureau. After être, professions take no article: Elle est ingénieure.',
       lessons: [
         L('Professions', [['le métier', 'profession'], ['le professeur', 'teacher'], ['l’ingénieur', 'engineer'], ['l’infirmière', 'nurse'], ['l’employé', 'employee']], ['Mon [métier] me plaît beaucoup.', 'I like my profession a lot.'], ['Elle travaille comme ingénieure à Lyon.', 'She works as an engineer in Lyon.']),
-        L('At the office', [['le bureau', 'office'], ['la réunion', 'meeting'], ['le collègue', 'colleague'], ['la tâche', 'task'], ['le délai', 'deadline']], ['J’ai une [réunion] à dix heures.', 'I have a meeting at ten o’clock.'], ['Le délai du projet se termine vendredi.', 'The project deadline ends on Friday.']),
-        L('Applying', [['la candidature', 'application'], ['le CV', 'CV'], ['l’entretien', 'interview'], ['l’expérience', 'experience'], ['le poste', 'position']], ['J’écris une [candidature] pour le poste.', 'I am writing an application for the position.'], ['L’entretien s’est mieux passé que prévu.', 'The interview went better than expected.']),
+        L('At the office', [['le bureau', 'office'], ['la réunion', 'meeting'], ['le collègue', 'colleague'], ['la tâche', 'task'], ['le délai', 'time limit']], ['J’ai une [réunion] à dix heures.', 'I have a meeting at ten o’clock.'], ['La date limite du projet est vendredi.', 'The project deadline is on Friday.']),
+        L('Applying', [['la candidature', 'application'], ['le CV', 'CV'], ['l’entretien', 'interview'], ['l’expérience', 'experience'], ['le poste', 'position']], ['Je prépare ma [candidature] pour le poste.', 'I am writing an application for the position.'], ['L’entretien s’est mieux passé que prévu.', 'The interview went better than expected.']),
         L('Pay & contracts', [['le salaire', 'salary'], ['la promotion', 'promotion'], ['les heures supplémentaires', 'overtime'], ['démissionner', 'to resign'], ['le contrat', 'contract']], ['J’ai signé mon [contrat].', 'I have signed my contract.'], ['Il a démissionné parce qu’il faisait trop d’heures supplémentaires.', 'He quit because he worked too much overtime.']),
       ],
     },
@@ -153,9 +153,9 @@ export const french: Course = {
       tip: 'The subjunctive follows expressions of necessity, will and emotion: Il faut que tu viennes. Je veux qu’il parte. Je suis content que vous soyez là.',
       lessons: [
         L('Society', [['la société', 'society'], ['le citoyen', 'citizen'], ['l’inégalité', 'inequality'], ['la communauté', 'community'], ['le droit', 'legal right']], ['Dans beaucoup de pays, les [inégalités] augmentent.', 'Inequalities are increasing in many countries.'], ['Tous les citoyens ont les mêmes droits.', 'All citizens have the same rights.']),
-        L('Politics', [['le gouvernement', 'government'], ['l’élection', 'election'], ['la loi', 'law'], ['le parti', 'political party'], ['voter', 'to vote']], ['Le [gouvernement] a adopté une nouvelle loi.', 'The government has passed a new law.'], ['Tous les citoyens peuvent voter sur cette loi.', 'All citizens can vote on this law.']),
+        L('Politics', [['le gouvernement', 'government'], ['l’élection', 'election'], ['la loi', 'law'], ['le parti', 'political party'], ['voter', 'to vote']], ['Le [gouvernement] a adopté une nouvelle loi.', 'The government has passed a new law.'], ['Il faut voter pour choisir le gouvernement.', 'You have to vote to choose the government.']),
         L('Economy', [['l’économie', 'economy'], ['le chômage', 'unemployment'], ['l’inflation', 'inflation'], ['la croissance', 'growth'], ['l’impôt', 'tax']], ['Notre [économie] se redresse lentement.', 'Our economy is slowly recovering.'], ['Des impôts plus élevés freinent la croissance.', 'Higher taxes slow down growth.']),
-        L('Education', [['l’éducation', 'education'], ['l’université', 'university'], ['les études', 'studies'], ['le diplôme', 'degree'], ['encourager', 'to promote']], ['Une bonne [éducation] ouvre beaucoup de portes.', 'Good education opens many doors.'], ['Après son diplôme, elle voudrait travailler à l’étranger.', 'After graduating she would like to work abroad.']),
+        L('Education', [['l’éducation', 'education'], ['l’université', 'university'], ['les études', 'studies'], ['le diplôme', 'degree'], ['encourager', 'to encourage']], ['Une bonne [éducation] ouvre beaucoup de portes.', 'Good education opens many doors.'], ['Après son diplôme, elle voudrait travailler à l’étranger.', 'After graduating she would like to work abroad.']),
       ],
     },
     {
@@ -170,7 +170,7 @@ export const french: Course = {
     },
     {
       title: 'Argumenter', sub: 'Arguing a case', emoji: '⚖️',
-      tip: 'Two-part connectors: à la fois … et (both … and), soit … soit (either … or), ni … ni (neither … nor).',
+      tip: 'Contrast and consequence connectors structure an argument: d’une part … d’autre part (on the one hand … on the other), cependant, par conséquent, alors que. Ni … ni takes ne before the verb: Je ne mange ni viande ni poisson.',
       lessons: [
         L('Contrasts', [['d’une part', 'on the one hand'], ['d’autre part', 'on the other hand'], ['cependant', 'however'], ['par conséquent', 'consequently'], ['au moins', 'at least']], ['[D’une part], c’est cher, d’autre part c’est pratique.', 'On the one hand it is expensive, on the other hand practical.'], ['Le résultat n’est cependant pas clair.', 'However, the result is not clear.']),
         L('Claims', [['affirmer', 'to claim'], ['nier', 'to deny'], ['étayer', 'to substantiate'], ['l’affirmation', 'assertion'], ['la preuve', 'proof']], ['Il [affirme] n’avoir rien su.', 'He claims to have known nothing.'], ['Cette thèse ne peut pas être étayée.', 'This thesis cannot be substantiated.']),
@@ -202,12 +202,12 @@ export const french: Course = {
     },
     {
       title: 'Langue académique', sub: 'Academic French', emoji: '🎓',
-      tip: 'Academic style favours nouns and impersonal forms: Il convient de + infinitive, Il s’agit de + noun. Avoid je and on’s chatty feel in essays.',
+      tip: 'Academic style favours nouns and impersonal forms: Il convient de + infinitive, Il s’agit de + noun. Avoid je and the chatty feel of on in essays; prefer il convient de, il s’agit de, and passive or nominal forms.',
       lessons: [
         L('Research', [['la thèse', 'thesis'], ['la méthode', 'method'], ['l’hypothèse', 'hypothesis'], ['le constat', 'finding'], ['la corrélation', 'correlation']], ['La [thèse] a été vérifiée de manière empirique.', 'The thesis was empirically tested.'], ['Ce constat change notre compréhension.', 'This finding changes our understanding.']),
         L('Analysis', [['analyser', 'to analyze'], ['remettre en question', 'to question'], ['examiner', 'to examine'], ['déduire', 'to deduce'], ['présupposer', 'to presuppose']], ['Il faut [analyser] chaque source de façon critique.', 'One should critically analyze every source.'], ['On peut en déduire une conclusion claire.', 'A clear conclusion can be deduced from this.']),
-        L('Concessions', [['quoique', 'albeit'], ['entre-temps', 'meanwhile'], ['néanmoins', 'nonetheless'], ['dans la mesure où', 'insofar as'], ['malgré', 'despite']], ['[Quoique] le résultat surprenne, il est plausible.', 'Although the result is surprising, it is plausible.'], ['Malgré les critiques, elle a maintenu son plan.', 'Despite the criticism she stuck to her plan.']),
-        L('Reported speech', [['selon', 'according to'], ['d’après', 'based on'], ['soi-disant', 'supposedly'], ['comme chacun sait', 'as is well known'], ['expliquer', 'to explain']], ['[Selon] le rapport, les prix augmentent.', 'According to the report prices are rising.'], ['Il a expliqué qu’il n’en avait rien su.', 'He explained that he had known nothing about it.']),
+        L('Concessions', [['quoique', 'although (more literary)'], ['entre-temps', 'meanwhile'], ['néanmoins', 'nonetheless'], ['dans la mesure où', 'insofar as'], ['malgré', 'despite']], ['[Entre-temps], nous avons attendu la réponse.', 'Meanwhile, we waited for the answer.'], ['Malgré les critiques, elle a maintenu son plan.', 'Despite the criticism she stuck to her plan.']),
+        L('Reported speech', [['selon', 'according to'], ['d’après', 'according to (also: based on)'], ['soi-disant', 'supposedly'], ['comme chacun sait', 'as is well known'], ['expliquer', 'to explain']], ['Ce [soi-disant] expert n’a jamais publié d’étude.', 'This so-called expert has never published a study.'], ['Il a expliqué qu’il n’en avait rien su.', 'He explained that he had known nothing about it.']),
       ],
     },
     {
