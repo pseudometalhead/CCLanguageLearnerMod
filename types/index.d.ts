@@ -26,7 +26,7 @@ export type Exercise =
 export type App = {
   /** Course being studied: 'de'. Progress is kept per course. */
   lang: string
-  screen: 'home' | 'intro' | 'play' | 'result' | 'words'
+  screen: 'home' | 'intro' | 'play' | 'result' | 'words' | 'settings'
   level: Level
   unit: number
   /** 0 to 19 within the level; -1 is the placement quiz that unlocks `level`, -2 practice, -3 the level check. */

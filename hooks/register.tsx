@@ -17,14 +17,14 @@ const WIND_NARROW = [0, 2, 4, 2, 0]
 // The same river on a desktop pane, where a cell is wide and the buttons are bigger.
 const DESK_WIND = [0, 3, 6, 3, 0]
 
-// One dark theme per CEFR level on a desktop: the ground, a lifted card colour, a muted card for locked lessons, two
-// bright accents, and the text colour that sits on the first accent.
+// One dark theme per CEFR level on a desktop, in the candy pastel palette: a ground, card and locked-card colour mixed from
+// the level's pastel accent (11, 20 and 15 % over near-black), the accent itself, a near-white (a2) and the dark text for the accent.
 const THEMES: Record<string, { bg: string; card: string; lock: string; a1: string; a2: string; on: string }> = {
-  A1: { bg: '#0F2418', card: '#173826', lock: '#142E1F', a1: '#58CC02', a2: '#C3F58C', on: '#0B2A00' },
-  A2: { bg: '#0B2230', card: '#12364B', lock: '#0F2D3E', a1: '#1CB0F6', a2: '#8BE3FF', on: '#00263A' },
-  B1: { bg: '#1A1633', card: '#261F4A', lock: '#211B40', a1: '#A78BFA', a2: '#FF7AB6', on: '#1D0F4D' },
-  B2: { bg: '#2A1218', card: '#3F1B25', lock: '#35171F', a1: '#FF4B6E', a2: '#FFB04B', on: '#3A0010' },
-  C1: { bg: '#1F1A0A', card: '#31290F', lock: '#2A2310', a1: '#FFC800', a2: '#FFF0A6', on: '#2D2300' },
+  A1: { bg: '#1D261B', card: '#293922', lock: '#222E1E', a1: '#9BE564', a2: '#EDEDED', on: '#10131A' },
+  A2: { bg: '#1A242C', card: '#243641', lock: '#1E2C36', a1: '#7FD4FF', a2: '#EDEDED', on: '#10131A' },
+  B1: { bg: '#221F2C', card: '#332D41', lock: '#292536', a1: '#C9A7FF', a2: '#EDEDED', on: '#10131A' },
+  B2: { bg: '#281E26', card: '#3D2C36', lock: '#31242D', a1: '#FFA3C4', a2: '#EDEDED', on: '#10131A' },
+  C1: { bg: '#28241C', card: '#3D3524', lock: '#312C20', a1: '#FFD36E', a2: '#EDEDED', on: '#10131A' },
 }
 
 // Plays the mp3 named by $env:BABEL_CLIP with Windows' media player, then exits once it has ended.
@@ -131,11 +131,12 @@ export const register: Register = on => {
     // The level's own dark theme on a desktop; the terminal keeps its named colours.
     const th = THEMES[s.level] ?? THEMES.A1
     const lvlc = desk ? th.a1 : info.color
-    const TINT: Record<string, string> = { cyan: th.a2, blue: th.a1, green: '#6EE03A', yellow: '#FFD84A', magenta: '#FF8AD0', red: '#FF6B7A', gray: '#9C98A6' }
+    const TINT: Record<string, string> = { cyan: th.a1, blue: th.a1, green: '#6EE03A', yellow: th.a1, magenta: th.a1, red: '#FF6B7A', gray: '#9AA3A8' }
     const tint = (c?: string) => (desk && c ? (TINT[c] ?? c) : c)
     const ink = desk ? '#F4F1E8' : undefined
-    // A native button is drawn dark and see-through in a dark pane: a light box behind it lifts it (the selected, primary one stays black).
-    const lift = (unselected: boolean, key: string, node: any) => (desk && unselected ? <Box key={key} backgroundColor={th.a2}>{node}</Box> : node)
+    // Desktop pills are plain black buttons (readable on the dark ground), side by side with no frame between them; the
+    // selected one is marked by its ▣ / ● glyph.
+    const lift = (_selected: boolean, _key: string, node: any) => node
     const page = (tree: any) =>
       desk ? (
         <Box flexDirection="column" backgroundColor={th.bg} padding={1} minHeight="100%">
@@ -147,11 +148,11 @@ export const register: Register = on => {
     const act = (key: string, label: string, onPress: () => unknown, o: { hotkey?: string; main?: boolean; tone?: string; focus?: boolean; num?: string; end?: boolean; gap?: boolean } = {}) => {
       const framed = !desk || (o.tone !== undefined && o.tone !== 'gray')
       return (
-        <Box key={`act-${key}`} {...(framed ? { borderStyle: 'round' as const, borderColor: o.tone ?? 'gray', paddingX: 1 } : desk && !o.main ? { backgroundColor: th.a2 } : {})} marginRight={o.end ? 0 : 1} marginBottom={o.gap ? 1 : 0}>
+        <Box key={`act-${key}`} {...(framed ? { borderStyle: 'round' as const, borderColor: o.tone ?? 'gray', paddingX: 1 } : {})} marginRight={o.end ? 0 : 1} marginBottom={o.gap ? 1 : 0}>
           <Button
             key={key}
             hotkey={o.hotkey}
-            variant={desk ? (o.main ? 'primary' : 'secondary') : undefined}
+            variant={desk ? 'primary' : undefined}
             autoFocus={o.focus ? true : undefined}
             label={!desk && o.num ? `${o.num} ${label}` : label}
             onPress={onPress}
@@ -256,6 +257,7 @@ export const register: Register = on => {
         if (nodeState(target, level, idx) === 'locked') return { ...a, note: 'Finish the lesson before it to unlock this one.' }
         return { ...a, ...fresh, level, screen: 'intro' as const, lesson: idx, unit: unitIndex(idx) }
       })
+    const openSettings = () => update($, app, a => ({ ...a, ...fresh, screen: 'settings' as const }))
     const openWords = () => update($, app, a => ({ ...a, ...fresh, screen: 'words' as const }))
     const openPractice = () => update($, app, a => ({ ...a, ...fresh, screen: 'intro' as const, lesson: -2 }))
     const openCheck = () => update($, app, a => ({ ...a, ...fresh, screen: 'intro' as const, lesson: -3 }))
@@ -411,7 +413,8 @@ export const register: Register = on => {
       <Box borderStyle="round" borderColor={desk ? th.a1 : 'cyan'} {...(desk ? { backgroundColor: th.card } : {})} paddingX={1} flexDirection="column" marginBottom={desk ? 1 : 0}>
         <Box>
           <Text bold color={desk ? th.a1 : 'cyan'}>🌍 {APP_NAME} <Text color={ink} dimColor>· {course.name} </Text></Text>
-          {lift(true, 'sound-w', <Button key="sound" label={s.sound ? '🔊 on' : '🔇 off'} onPress={() => update($, app, a => ({ ...a, sound: !a.sound }))} />)}
+          {lift(false, 'sound-w', <Button key="sound" variant={desk ? 'primary' : undefined} label={s.sound ? '🔊 on' : '🔇 off'} onPress={() => update($, app, a => ({ ...a, sound: !a.sound }))} />)}
+          {lift(false, 'settings-w', <Button key="settings" hotkey="o" variant={desk ? 'primary' : undefined} label={desk ? '⚙ Settings' : '⚙ Settings (o)'} onPress={openSettings} />)}
         </Box>
         <Text color={ink}>🔥 {s.streak}   ⭐ {s.xp}   🎯 {desk ? <Text bold color={th.a2}>{s.dayXp >= GOAL ? 'Daily goal done ✓' : `${s.dayXp}/${GOAL} XP today`}</Text> : <Text>{Math.min(s.dayXp, GOAL)}/{GOAL} <Text color="green">{bar(Math.min(s.dayXp, GOAL), GOAL, 8)}</Text></Text>}</Text>
       </Box>
@@ -440,22 +443,6 @@ export const register: Register = on => {
       return page(
         <Box flexDirection="column">
           {header}
-          {Object.keys(COURSES).length > 1 && (
-            <Box marginBottom={1}>
-              {Object.values(COURSES).map(c => (
-                lift(
-                  c.code !== s.lang,
-                  `lang-w-${c.code}`,
-                  <Button
-                    key={`lang-${c.code}`}
-                    variant={desk ? (c.code === s.lang ? 'primary' : 'secondary') : undefined}
-                    label={`${c.code === s.lang ? '●' : '○'} ${c.name}${desk ? '' : '  '}`}
-                    onPress={() => update($, app, a => switchCourse(a, c.code))}
-                  />,
-                )
-              ))}
-            </Box>
-          )}
           {showCheck && (
             <Box borderStyle="round" borderColor="yellow" paddingX={1} flexDirection="column" marginBottom={1}>
               <Text bold color={tint('yellow')}>🎯 New here? Find your level</Text>
@@ -468,11 +455,11 @@ export const register: Register = on => {
           <Box marginBottom={1}>
             {LEVELS.map(lv => (
               lift(
-                lv !== s.level,
+                lv === s.level,
                 `tab-w-${lv}`,
                 <Button
                   key={`tab-${lv}`}
-                  variant={desk ? (lv === s.level ? 'primary' : 'secondary') : undefined}
+                  variant={desk ? 'primary' : undefined}
                   label={`${lv === s.level ? '▣' : levelOpen(s, lv) ? '□' : '🔒'} ${lv}${desk ? '' : '  '}`}
                   onPress={() => goLevel(lv)}
                 />,
@@ -515,7 +502,7 @@ export const register: Register = on => {
                   marginLeft={desk ? (s.unit % 2 === 0 ? DESK_WIND : [6, 3, 0, 3, 6])[p] : wind[p]}
                   marginBottom={desk ? 1 : 0}
                   {...(desk
-                    ? { backgroundColor: st === 'locked' ? th.lock : th.card, paddingX: 1, minWidth: 30, ...(st === 'current' ? { borderStyle: 'round' as const, borderColor: th.a1 } : {}) }
+                    ? { backgroundColor: st === 'locked' ? th.lock : th.card, paddingX: 1, minWidth: 30, borderStyle: 'round' as const, borderColor: st === 'current' ? th.a1 : st === 'locked' ? th.lock : th.card }
                     : {})}
                 >
                   {/* A desktop button is native and framed already: a box round it only doubles the frame, so it gets a coloured halo instead. */}
@@ -529,8 +516,8 @@ export const register: Register = on => {
                     />
                   </Box>
                   <Box flexDirection="column" marginLeft={1}>
-                    <Text bold={st !== 'locked'} color={desk ? (st === 'locked' ? '#9C98A6' : th.a2) : tint(color)}>{title}</Text>
-                    <Text dimColor={st !== 'current'} color={desk ? (st === 'locked' ? '#8B8796' : lvlc) : tint(st === 'current' ? lvlc : undefined) ?? ink}>
+                    <Text bold={st !== 'locked'} color={desk ? (st === 'current' ? th.a1 : ink) : tint(color)} dimColor={desk && st === 'locked'}>{title}</Text>
+                    <Text dimColor={desk ? st !== 'current' : st !== 'current'} color={desk ? (st === 'current' ? lvlc : ink) : tint(st === 'current' ? lvlc : undefined) ?? ink}>
                       {st === 'done' ? `${'★'.repeat(got)}${'☆'.repeat(3 - got)}` : st === 'current' ? 'START' : rev ? 'review' : 'locked'}
                     </Text>
                   </Box>
@@ -550,7 +537,6 @@ export const register: Register = on => {
               {act('check', '🎯 Level check', openCheck, { hotkey: 'l', end: true })}
             </Box>
           )}
-          <Box marginTop={1}>{act('audiotest', '🔧 Audio test', testAudio, { hotkey: 'a', end: true })}</Box>
           {!open && (
             <Box borderStyle="round" borderColor="yellow" paddingX={1} flexDirection="column">
               <Text bold color={tint('yellow')}>🚀 Know {s.level} already?</Text>
@@ -558,6 +544,44 @@ export const register: Register = on => {
               <Button key="test" label="Take the placement quiz ▶" onPress={openTest} />
             </Box>
           )}
+        </Box>
+      )
+    }
+
+    // ================================ SETTINGS ===============================================
+    if (s.screen === 'settings') {
+      return page(
+        <Box flexDirection="column">
+          <Box borderStyle="round" borderColor={desk ? th.a1 : 'cyan'} {...(desk ? { backgroundColor: th.card } : {})} paddingX={1} flexDirection="column" marginBottom={1}>
+            <Text bold color={desk ? th.a1 : 'cyan'}>⚙ Settings</Text>
+          </Box>
+          <Text bold color={ink}>Language</Text>
+          <Box marginBottom={1}>
+            {Object.values(COURSES).map(c =>
+              lift(
+                c.code === s.lang,
+                `lang-w-${c.code}`,
+                <Button
+                  key={`lang-${c.code}`}
+                  variant={desk ? 'primary' : undefined}
+                  label={`${c.code === s.lang ? '●' : '○'} ${c.name}${desk ? '' : '  '}`}
+                  onPress={() => update($, app, a => switchCourse(a, c.code))}
+                />,
+              ),
+            )}
+          </Box>
+          <Text bold color={ink}>Sound</Text>
+          <Box marginBottom={1}>
+            {lift(false, 'sound-w', <Button key="sound" variant={desk ? 'primary' : undefined} label={s.sound ? '🔊 on' : '🔇 off'} onPress={() => update($, app, a => ({ ...a, sound: !a.sound }))} />)}
+          </Box>
+          <Text bold color={ink}>Audio</Text>
+          <Box>{act('audiotest', '🔧 Audio test', testAudio, { hotkey: 'a', end: true })}</Box>
+          {s.note && (
+            <Box marginTop={1}>
+              <Text color={ink}>{s.note}</Text>
+            </Box>
+          )}
+          <Box marginTop={1}>{act('back', '← Map', toMap, { hotkey: 'm', focus: true, end: true })}</Box>
         </Box>
       )
     }
@@ -707,7 +731,7 @@ export const register: Register = on => {
           <Box borderStyle="round" borderColor="gray" paddingX={1} marginBottom={1}>
             {x.say && (
               <Box marginRight={1}>
-                {lift(true, 'play-w', <Button key="play" hotkey="p" label="🔊 " onPress={() => say(x.say as string)} />)}
+                {lift(false, 'play-w', <Button key="play" hotkey="p" variant={desk ? 'primary' : undefined} label="🔊 " onPress={() => say(x.say as string)} />)}
               </Box>
             )}
             <Text color={ink} bold>{x.prompt}</Text>
@@ -753,7 +777,7 @@ export const register: Register = on => {
           <Box borderStyle="round" borderColor="gray" paddingX={1} marginBottom={1}>
             {x.say && (
               <Box marginRight={1}>
-                {lift(true, 'play-w', <Button key="play" hotkey="p" label="🔊 " onPress={() => say(x.say as string)} />)}
+                {lift(false, 'play-w', <Button key="play" hotkey="p" variant={desk ? 'primary' : undefined} label="🔊 " onPress={() => say(x.say as string)} />)}
               </Box>
             )}
             <Text color={ink} bold>{x.prompt}</Text>
@@ -790,7 +814,7 @@ export const register: Register = on => {
           <Box marginRight={1}>
             <Text color={ink}>{isDiag ? `${s.i + 1}/${s.ex.length}` : heartsRow(s.hearts, MAX_HEARTS)}</Text>
           </Box>
-          {lift(true, 'sound-w', <Button key="sound" label={s.sound ? '🔊' : '🔇'} onPress={() => update($, app, a => ({ ...a, sound: !a.sound }))} />)}
+          {lift(false, 'sound-w', <Button key="sound" variant={desk ? 'primary' : undefined} label={s.sound ? '🔊' : '🔇'} onPress={() => update($, app, a => ({ ...a, sound: !a.sound }))} />)}
         </Box>
         <Box marginBottom={1}>
           <Text bold color={tint('magenta')}>{x.again ? '↻ Try again: ' : ''}{x.title}</Text>
