@@ -159,7 +159,7 @@ export const register: Register = on => {
     // The level's own dark theme on a desktop; the terminal keeps its named colours.
     const th = THEMES[s.level] ?? THEMES.A1
     const lvlc = desk ? th.a1 : info.color
-    const TINT: Record<string, string> = { cyan: th.a1, blue: th.a1, green: '#6EE03A', yellow: th.a1, magenta: th.a1, red: '#FF6B7A', gray: '#9AA3A8' }
+    const TINT: Record<string, string> = { accent: th.a1, cyan: th.a1, blue: th.a1, green: '#6EE03A', yellow: th.a1, magenta: th.a1, red: '#FF6B7A', gray: '#9AA3A8' }
     const tint = (c?: string) => (desk && c ? (TINT[c] ?? c) : c)
     const ink = desk ? '#F4F1E8' : undefined
     // Desktop pills are plain black buttons (readable on the dark ground), side by side with no frame between them; the
@@ -178,7 +178,7 @@ export const register: Register = on => {
     const act = (key: string, label: string, onPress: () => unknown, o: { hotkey?: string; main?: boolean; tone?: string; focus?: boolean; num?: string; end?: boolean; gap?: boolean } = {}) => {
       const framed = !desk || (o.tone !== undefined && o.tone !== 'gray')
       return (
-        <Box key={`act-${key}`} {...(framed ? { borderStyle: 'round' as const, borderColor: tint(o.tone ?? 'gray'), paddingX: 1 } : {})} marginRight={o.end ? 0 : 1} marginBottom={o.gap ? 1 : 0}>
+        <Box key={`act-${key}`} {...(framed ? { borderStyle: 'round' as const, borderColor: tint(desk && o.tone === 'green' && key !== 'continue' ? 'accent' : (o.tone ?? 'gray')), paddingX: 1 } : {})} marginRight={o.end ? 0 : 1} marginBottom={o.gap ? 1 : 0}>
           <Button
             key={key}
             hotkey={o.hotkey}
@@ -661,7 +661,7 @@ export const register: Register = on => {
       return page(
         <Box flexDirection="column">
           {header}
-          <Box borderStyle="double" borderColor={isTest || isPractice || isDiag ? 'yellow' : isRev ? 'magenta' : lvlc} paddingX={1} flexDirection="column" marginBottom={1}>
+          <Box borderStyle={desk ? 'round' : 'double'} borderColor={tint(isTest || isPractice || isDiag ? 'yellow' : isRev ? 'magenta' : lvlc)} paddingX={1} flexDirection="column" marginBottom={1}>
             <Text bold color={tint(isTest || isPractice || isDiag ? 'yellow' : isRev ? 'magenta' : lvlc)}>
               {plain(isDiag ? '🎯 LEVEL CHECK' : isPractice ? `💪 PRACTICE · ${s.level}` : isTest ? `🚀 PLACEMENT QUIZ → ${s.level}` : isRev ? `🏆 UNIT REVIEW · ${unit.title}` : `${unit.emoji} LESSON ${s.lesson + 1} · ${lesson!.title}`)}
             </Text>
@@ -724,8 +724,8 @@ export const register: Register = on => {
       return page(
         <Box flexDirection="column">
           {header}
-          <Box borderStyle="double" borderColor={s.passed ? 'green' : 'red'} paddingX={1} flexDirection="column" marginBottom={1}>
-            <Text bold color={tint(s.passed ? 'green' : 'red')}>
+          <Box borderStyle={desk ? 'round' : 'double'} borderColor={desk && s.passed ? th.a1 : s.passed ? 'green' : 'red'} paddingX={1} flexDirection="column" marginBottom={1}>
+            <Text bold color={desk && s.passed ? th.a1 : tint(s.passed ? 'green' : 'red')}>
               {plain(isDiag ? `🎯 YOUR LEVEL: ${s.level} · ${LEVEL_INFO[s.level].name}` : s.passed ? (isTest ? '🚀 LEVEL UNLOCKED' : isPractice ? '💪 PRACTICE COMPLETE' : '🏆 LESSON COMPLETE') : isTest ? '😕 NOT QUITE, TRY AGAIN' : '💔 OUT OF HEARTS')}
             </Text>
             {isDiag && <Text color={ink}>You cleared {s.dpass} of {LEVELS.length} levels{s.dpass > 0 ? `, up to ${LEVELS[Math.min(s.dpass, LEVELS.length) - 1]}` : ''}. {s.level} is where new material starts; the levels below stay open to browse.</Text>}
@@ -817,7 +817,7 @@ export const register: Register = on => {
             )}
             <Text color={ink} bold>{x.prompt}</Text>
           </Box>
-          <Box borderStyle="round" borderColor={ok ? 'green' : answered1 ? 'red' : 'cyan'} paddingX={1} minHeight={3} marginBottom={1}>
+          <Box borderStyle="round" borderColor={tint(ok ? 'green' : answered1 ? 'red' : 'cyan')} paddingX={1} minHeight={3} marginBottom={1}>
             <Text color={ink}>{built.length ? built.join(' ') : x.kind === 'spell' ? '_ _ _' : '…'}</Text>
           </Box>
           <Box flexWrap="wrap">
