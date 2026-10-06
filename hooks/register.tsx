@@ -320,7 +320,7 @@ export const register: Register = on => {
     const header = (
       <Box borderStyle="round" borderColor="cyan" paddingX={1} flexDirection="column">
         <Box>
-          <Text bold color="cyan">🌍 {APP_NAME} <Text dimColor>· {course.flag} {course.name} </Text></Text>
+          <Text bold color="cyan">🌍 {APP_NAME} <Text dimColor>· {course.name} </Text></Text>
           <Button key="sound" label={s.sound ? '🔊 on' : '🔇 off'} onPress={() => update($, app, a => ({ ...a, sound: !a.sound }))} />
         </Box>
         <Text>🔥 {s.streak}   ⭐ {s.xp}   🎯 {Math.min(s.dayXp, GOAL)}/{GOAL} <Text color="green">{bar(Math.min(s.dayXp, GOAL), GOAL, 8)}</Text></Text>
@@ -353,7 +353,12 @@ export const register: Register = on => {
           {Object.keys(COURSES).length > 1 && (
             <Box marginBottom={1}>
               {Object.values(COURSES).map(c => (
-                <Button key={`lang-${c.code}`} label={`${c.code === s.lang ? '●' : '○'} ${c.flag} ${c.name}  `} onPress={() => update($, app, a => switchCourse(a, c.code))} />
+                <Button
+                  key={`lang-${c.code}`}
+                  variant={desk ? (c.code === s.lang ? 'primary' : 'secondary') : undefined}
+                  label={`${c.code === s.lang ? '●' : '○'} ${c.name}${desk ? '' : '  '}`}
+                  onPress={() => update($, app, a => switchCourse(a, c.code))}
+                />
               ))}
             </Box>
           )}
@@ -368,7 +373,12 @@ export const register: Register = on => {
           )}
           <Box marginBottom={1}>
             {LEVELS.map(lv => (
-              <Button key={`tab-${lv}`} label={`${lv === s.level ? '▣' : levelOpen(s, lv) ? '□' : '🔒'} ${lv}  `} onPress={() => goLevel(lv)} />
+              <Button
+                key={`tab-${lv}`}
+                variant={desk ? (lv === s.level ? 'primary' : 'secondary') : undefined}
+                label={`${lv === s.level ? '▣' : levelOpen(s, lv) ? '□' : '🔒'} ${lv}${desk ? '' : '  '}`}
+                onPress={() => goLevel(lv)}
+              />
             ))}
           </Box>
           <Text color={info.color} bold>{s.level} · {info.name}  {bar(n, LESSONS_PER_LEVEL, 10)} {n}/{LESSONS_PER_LEVEL}</Text>

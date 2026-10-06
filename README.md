@@ -1,6 +1,6 @@
 # Babel Learning — a Duolingo-style language course for Claude Code
 
-Type `/babel-learning` in Claude Code (`/learn` also works). **German and French, A1 → C1**, 20 lessons per level (100 per language). Pick the language with the 🇩🇪/🇫🇷 buttons on the map.
+Type `/babel-learning` in Claude Code (`/learn` also works). **German and French, A1 → C1**, 20 lessons per level (100 per language). Pick the language with the language buttons on the map.
 
 ## The map
 - Five levels (A1 Beginner … C1 Advanced), each with **4 units × 5 nodes**: four lessons and a 🏆 unit review.
@@ -59,7 +59,7 @@ Then type `/babel-learning` (or `/learn`). Update later with `claude plugin mark
 
 The engine and the UI know nothing about German. Everything language-specific lives in one file per course:
 
-1. Copy `hooks/courses/de.ts` to `hooks/courses/fr.ts` and fill in the `Course`: `code`, `name`, `flag`, the system `voices`
+1. Copy `hooks/courses/de.ts` to `hooks/courses/fr.ts` and fill in the `Course`: `code`, `name`, `flag` (kept for reference; the app shows the name, because Windows draws flag emoji as letters), the system `voices`
    for audio (macOS and Windows names, best first), the `article` rules (leave `article` out if the language has no gendered articles), `praise`, `coach`
    lines, and the 5 levels x 4 units x 4 lessons.
 2. Register it in `hooks/courses/index.ts`.
