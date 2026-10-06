@@ -483,6 +483,20 @@ test('after each press the pane asks for the keys back', async ($, on) => {
   await ui.unmount()
 })
 
+test('on a desktop a press does not re-open the pane, which pulled the keys back to the prompt', async ($, on) => {
+  world(on)
+  let opened = 0
+  on('ui.open', async () => {
+    opened++
+    return { value: { isPlaced: true } }
+  })
+  const ui = await $.ui.mount({ ...PANE, surface: 'desktop' })
+  await ui.press({ key: 'check-new' })
+  await ui.press({ key: 'start' })
+  expect(opened).toBe(0)
+  await ui.unmount()
+})
+
 test('the language switcher moves between German and French, each with its own map and audio clips', async ($, on) => {
   mock.clock(on, { now: NOW })
   mock.store(on)

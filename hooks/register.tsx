@@ -15,6 +15,15 @@ const STORE = 'app-v3'
 const WIND = [4, 9, 12, 9, 4]
 const WIND_NARROW = [0, 2, 4, 2, 0]
 
+// Plays the mp3 named by $env:BABEL_CLIP with Windows' media player, then exits once it has ended.
+const PLAY_PS =
+  "if (-not (Test-Path -LiteralPath $env:BABEL_CLIP)) { exit 2 }; Add-Type -AssemblyName presentationCore; $p = New-Object System.Windows.Media.MediaPlayer; $p.Open([uri]$env:BABEL_CLIP); $p.Play(); " +
+  "$n = 0; while (-not $p.NaturalDuration.HasTimeSpan -and $n -lt 100) { Start-Sleep -Milliseconds 50; $n++ }; " +
+  'if (-not $p.NaturalDuration.HasTimeSpan) { exit 1 }; Start-Sleep -Milliseconds ([int]$p.NaturalDuration.TimeSpan.TotalMilliseconds + 200)'
+
+let playing: Promise<unknown> = Promise.resolve()
+let queued = 0
+
 const initial = newApp(DEFAULT_COURSE)
 const app = atom({ plugin: 'language-learner', key: 'app' } as const, initial)
 
@@ -49,7 +58,9 @@ export const register: Register = on => {
     const pressed = await next(e)
     try {
       const key = primaryKey(await read($, app))
-      await $.ui.open({ id: PANE, title: APP_NAME, focus: true })
+      // On a desktop a click already gave the pane the keys, and re-opening it after every press is what pulled the
+      // keyboard back to the prompt: only move the ring there. The terminal still needs the pane asked for again.
+      if (e.surface !== 'desktop') await $.ui.open({ id: PANE, title: APP_NAME, focus: true })
       if (key) await $.ui.focus({ requestId: PANE, key })
     } catch {
       // the pane may already hold the keys, or the surface refuses focus: nothing to do
@@ -110,10 +121,27 @@ export const register: Register = on => {
         }
       }
       // No speech here: play the recorded clip that ships with the course, if there is one.
+      // `$.audio.play` has no player on Windows (it resolves having skipped the clip), so play it with the
+      // system's own media player first; it runs unawaited so the pane never waits for the clip to end.
+      const asset = clipAsset(course.code, text)
+      const onWindows = /windows/i.test(why)
+      if (onWindows && queued < 2) {
+        // One clip at a time, in order: a clip started on top of the last one is noise. More than one waiting is dropped.
+        const file = `${$.plugin.root}/${asset}`.replace(/\//g, '\\')
+        queued++
+        playing = playing
+          .then(() => $.process.run(['powershell', '-NoProfile', '-NonInteractive', '-WindowStyle', 'Hidden', '-Command', PLAY_PS], { env: { BABEL_CLIP: file }, timeoutMs: 20000 }))
+          .catch(() => undefined)
+          .then(() => {
+            queued--
+          })
+      }
       try {
-        await $.audio.play({ asset: clipAsset(course.code, text) })
+        await $.audio.play({ asset })
         return
       } catch (err) {
+        // The Windows player above is what plays there: its clip must not be reported as missing.
+        if (onWindows) return
         why = `${why}; clip: ${err instanceof Error ? err.message : String(err)}`
       }
       await update($, app, a => ({ ...a, note: `🔇 No audio here (${why.slice(0, 200) || 'no reason given'}). It says: “${text}”` }))
@@ -126,6 +154,14 @@ export const register: Register = on => {
         report.push('speech: works')
       } catch (err) {
         report.push(`speech: ${(err instanceof Error ? err.message : String(err)).slice(0, 140)}`)
+      }
+      // Windows has no clip player in `$.audio.play` (it skips silently), so try the system's player and say so.
+      try {
+        const file = `${$.plugin.root}/${clipAsset(course.code, 'Guten Morgen')}`.replace(/\//g, '\\')
+        const r = await $.process.run(['powershell', '-NoProfile', '-NonInteractive', '-WindowStyle', 'Hidden', '-Command', PLAY_PS], { env: { BABEL_CLIP: file }, timeoutMs: 20000 })
+        report.push(r.exitCode === 0 ? 'Windows player: played' : `Windows player: exit ${r.exitCode} ${r.stderr.slice(0, 100)}`)
+      } catch (err) {
+        report.push(`Windows player: ${(err instanceof Error ? err.message : String(err)).slice(0, 100)}`)
       }
       try {
         await $.audio.play({ asset: clipAsset(course.code, 'Guten Morgen') })
@@ -399,18 +435,25 @@ export const register: Register = on => {
             const rev = isReview(idx)
             const title = lessonInfo(course, s.level, idx).title
             const color = st === 'locked' ? 'gray' : st === 'done' ? 'yellow' : rev ? 'magenta' : info.color
-            const face = st === 'locked' ? '🔒' : st === 'done' ? (rev ? '👑' : '⭐') : rev ? '🏆' : '▶️'
+            const face = st === 'locked' ? '🔒' : st === 'done' ? (rev ? '👑' : '⭐') : rev ? '🏆' : '▶'
             const got = starsOf(s, s.level, idx)
             return (
               <Box key={`row-${idx}`} flexDirection="column">
-                {p > 0 && (
+                {p > 0 && !desk && (
                   <Box marginLeft={Math.round((wind[p - 1] + wind[p]) / 2) + 3}>
                     <Text dimColor>┊</Text>
                   </Box>
                 )}
-                <Box marginLeft={wind[p]}>
-                  <Box borderStyle={st === 'current' ? 'double' : 'round'} borderColor={color} paddingX={1}>
-                    <Button key={`node-${idx}`} label={face} autoFocus={st === 'current' && !showCheck ? true : undefined} onPress={() => openLesson(s.level, idx)} />
+                <Box marginLeft={desk ? 0 : wind[p]} marginBottom={desk ? 1 : 0}>
+                  {/* A desktop button is native and framed already: a box round it only doubles the frame and skews the emoji. */}
+                  <Box {...(desk ? {} : { borderStyle: st === 'current' ? ('double' as const) : ('round' as const), borderColor: color, paddingX: 1 })}>
+                    <Button
+                      key={`node-${idx}`}
+                      variant={desk ? (st === 'current' ? 'primary' : 'secondary') : undefined}
+                      label={desk ? ` ${face} ` : face}
+                      autoFocus={st === 'current' && !showCheck ? true : undefined}
+                      onPress={() => openLesson(s.level, idx)}
+                    />
                   </Box>
                   <Box flexDirection="column" marginLeft={1}>
                     <Text bold={st !== 'locked'} color={color}>{title}</Text>
