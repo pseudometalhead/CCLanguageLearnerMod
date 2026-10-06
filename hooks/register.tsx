@@ -56,11 +56,16 @@ export const register: Register = on => {
 
     // ---- audio ----------------------------------------------------------------------------
     const say = async (text: string) => {
-      try {
-        await $.audio.speak(text, { voice: course.voice })
-      } catch {
-        await update($, app, a => ({ ...a, note: `🔇 No audio here (needs macOS + ${course.voiceHint}). It says: “${text}”` }))
+      // Try each installed-voice name in turn (names differ per platform), then the platform default.
+      for (const voice of [...course.voices, undefined]) {
+        try {
+          await $.audio.speak(text, voice ? { voice } : undefined)
+          return
+        } catch {
+          // voice missing here: try the next one
+        }
       }
+      await update($, app, a => ({ ...a, note: `🔇 No audio here (needs a speech voice, ideally ${course.voiceHint}). It says: “${text}”` }))
     }
     // Speaks what the exercise now showing asks to hear when it opens.
     const opened = async () => {

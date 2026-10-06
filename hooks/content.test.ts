@@ -189,7 +189,7 @@ for (const course of courses) test(`[${course.code}] in a unit review the second
 })
 
 // A language without gendered articles and a different name: nothing may still say "German" or ask for an article.
-const articleless: Course = { ...german, code: 'xx', name: 'Testish', voice: 'Nobody', article: undefined, capitalNouns: false }
+const articleless: Course = { ...german, code: 'xx', name: 'Testish', voices: ['Nobody'], article: undefined, capitalNouns: false }
 test('the engine is language-neutral: a made-up course gets its own name and no article puzzles', () => {
   for (const lv of LEVELS) {
     for (let idx = 0; idx < LESSONS_PER_LEVEL; idx++) {

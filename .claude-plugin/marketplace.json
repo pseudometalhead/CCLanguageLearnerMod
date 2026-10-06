@@ -1,7 +1,7 @@
 {
-  "name": "linguacc",
+  "name": "babel-learning",
   "owner": { "name": "pseudometalhead", "url": "https://github.com/pseudometalhead" },
-  "metadata": { "description": "LinguaCC: a Duolingo-style German course for Claude Code." },
+  "metadata": { "description": "Babel Learning: a Duolingo-style language course for Claude Code." },
   "plugins": [
     {
       "name": "language-learner",

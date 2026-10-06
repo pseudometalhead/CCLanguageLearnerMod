@@ -10,7 +10,7 @@ const PANE = {
   plugin: 'language-learner',
   component: 'Pane',
   requestId: 'language-learner',
-  props: { title: 'LinguaCC', isFocused: true, bodyColumns: 56, placement: 'dock', scroll: { offset: 0, bodyRows: 40 }, view: {} },
+  props: { title: 'Babel Learning', isFocused: true, bodyColumns: 56, placement: 'dock', scroll: { offset: 0, bodyRows: 40 }, view: {} },
 } as const
 
 const spoken: string[] = []
@@ -244,6 +244,26 @@ test('audio failure falls back to showing the German text', async ($, on) => {
   await ui.press({ key: 'start' })
   await ui.press({ key: 'play' })
   expect(await ui.find({ text: /No audio here/ })).toBeDefined()
+  await ui.unmount()
+})
+
+test('audio tries each voice name, then the platform default', async ($, on) => {
+  mock.clock(on, { now: NOW })
+  mock.store(on)
+  const tried: Array<string | undefined> = []
+  on('audio.speak', async (_$: any, e: any) => {
+    tried.push(e.voice)
+    // Only the last, platform-default attempt succeeds (like a Windows box without a German voice).
+    if (e.voice) throw new Error(`voice ${e.voice} is not installed`)
+    return { value: { via: 'system' } }
+  })
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  await ui.press({ key: 'node-0' })
+  await ui.press({ key: 'start' })
+  await ui.press({ key: 'play' })
+  expect(tried.slice(0, german.voices.length)).toEqual(german.voices)
+  expect(tried[german.voices.length]).toBeUndefined()
+  expect(await ui.find({ text: /No audio here/ })).toBeUndefined()
   await ui.unmount()
 })
 

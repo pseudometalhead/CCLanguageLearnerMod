@@ -1,4 +1,4 @@
-# LinguaCC — a Duolingo-style German course for Claude Code
+# Babel Learning — a Duolingo-style language course for Claude Code
 
 Type `/learn` in Claude Code. **German, A1 → C1**, 20 lessons per level (100 in all).
 
@@ -24,8 +24,11 @@ With the pane focused: **1–4** pick an option, **1–9** tap a word chip, **1�
 **u** undo, **p** play the audio, **s** start, **x** practice, **w** words, **n** next lesson, **r** try again, **m** back to the map.
 
 ## Audio
-German is spoken with the system speech synthesizer (voice **Anna**), so real playback needs **macOS** with that voice
-(System Settings → Accessibility → Spoken Content → System Voice → Manage Voices). Elsewhere the mod shows the German text instead.
+German is spoken with the system speech synthesizer. The mod tries a German voice by name (macOS **Anna**; Windows
+**Microsoft Hedda** / **Katja** / **Stefan**), then falls back to your system's default voice, which may speak German with
+the wrong accent. Install a German voice for the best result (macOS: System Settings → Accessibility → Spoken Content →
+System Voice → Manage Voices; Windows: Settings → Time & language → Speech → Add voices, and add German).
+If no voice works at all, the mod shows the German text instead.
 The 🔊/🔇 toggle mutes everything.
 
 ## Install (plug and play)
@@ -33,21 +36,21 @@ The 🔊/🔇 toggle mutes everything.
 In Claude Code:
 
     /plugin marketplace add pseudometalhead/CCLanguageLearnerMod
-    /plugin install language-learner@linguacc
+    /plugin install language-learner@babel-learning
 
 or from a terminal:
 
     claude plugin marketplace add pseudometalhead/CCLanguageLearnerMod
-    claude plugin install language-learner@linguacc
+    claude plugin install language-learner@babel-learning
 
-Then type `/learn`. Update later with `claude plugin marketplace update linguacc`.
+Then type `/learn`. Update later with `claude plugin marketplace update babel-learning`.
 
 ## Adding a language
 
 The engine and the UI know nothing about German. Everything language-specific lives in one file per course:
 
-1. Copy `hooks/courses/de.ts` to `hooks/courses/fr.ts` and fill in the `Course`: `code`, `name`, `flag`, the system `voice`
-   for audio, the `article` rules (leave `article` out if the language has no gendered articles), `praise`, `coach`
+1. Copy `hooks/courses/de.ts` to `hooks/courses/fr.ts` and fill in the `Course`: `code`, `name`, `flag`, the system `voices`
+   for audio (macOS and Windows names, best first), the `article` rules (leave `article` out if the language has no gendered articles), `praise`, `coach`
    lines, and the 5 levels x 4 units x 4 lessons.
 2. Register it in `hooks/courses/index.ts`.
 3. `claude plugin test .` runs every content test against the new course automatically: no duplicate words,

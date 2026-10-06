@@ -7,7 +7,7 @@ export type Lesson = { title: string; words: Pair[]; sentences: [Pair, Pair] }
 export type Unit = { title: string; sub: string; emoji: string; tip: string; lessons: Lesson[] }
 
 /** The name the app shows. Change it here only. */
-export const APP_NAME = 'LinguaCC'
+export const APP_NAME = 'Babel Learning'
 
 export const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1'] as const
 
@@ -29,8 +29,8 @@ export type Course = {
   /** Shown to the learner: 'German'. */
   name: string
   flag: string
-  /** System voice for `$.audio.speak` (macOS `say` voice name). */
-  voice: string
+  /** System voices for `$.audio.speak`, best first: macOS `say` and Windows voice names. The platform default is the last resort. */
+  voices: string[]
   /** How the voice is named in the "no audio" note. */
   voiceHint: string
   /** Gendered articles, if the language has them: the options of the article puzzle and how to spot a noun. */
