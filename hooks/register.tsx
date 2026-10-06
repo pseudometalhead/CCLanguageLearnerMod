@@ -5,6 +5,7 @@ import type { App, Level } from '../types'
 import { APP_NAME, LEVELS, LEVEL_INFO } from './course'
 import { COURSES, DEFAULT_COURSE, courseOf } from './courses'
 import { DAY, doneCount, firstOpen, fresh, GOAL, levelOpen, MAX_HEARTS, newApp, nextTarget, nodeState, placedLevel, placedTested, restore, sk, starsOf, switchCourse } from './progress'
+import { BEEP_WAV } from './beep'
 import { bar, buildDiagnostic, buildLesson, buildPractice, buildTest, DIAG_PASS, DIAG_STAGE, heartsRow, isReview, lessonInfo, LESSONS_PER_LEVEL, unitIndex } from './engine'
 
 const PANE = 'language-learner'
@@ -63,15 +64,33 @@ export const register: Register = on => {
     // ---- audio ----------------------------------------------------------------------------
     const say = async (text: string) => {
       // Try each installed-voice name in turn (names differ per platform), then the platform default.
+      let why = ''
       for (const voice of [...course.voices, undefined]) {
         try {
           await $.audio.speak(text, voice ? { voice } : undefined)
           return
-        } catch {
-          // voice missing here: try the next one
+        } catch (err) {
+          why = err instanceof Error ? err.message : String(err)
         }
       }
-      await update($, app, a => ({ ...a, note: `🔇 No audio here (needs a speech voice, ideally ${course.voiceHint}). It says: “${text}”` }))
+      await update($, app, a => ({ ...a, note: `🔇 No speech here (${why.slice(0, 160) || 'no reason given'}). It says: “${text}”` }))
+    }
+    // Says in the pane whether speech and clip playback work here, with the engine's own error if not.
+    const testAudio = async () => {
+      const report: string[] = []
+      try {
+        await $.audio.speak('Hallo, das ist ein Test.')
+        report.push('speech: works')
+      } catch (err) {
+        report.push(`speech: ${(err instanceof Error ? err.message : String(err)).slice(0, 140)}`)
+      }
+      try {
+        await $.audio.play({ base64: BEEP_WAV, mime: 'audio/wav' })
+        report.push('beep: played (did you hear it?)')
+      } catch (err) {
+        report.push(`beep: ${(err instanceof Error ? err.message : String(err)).slice(0, 140)}`)
+      }
+      await update($, app, a => ({ ...a, note: `🔧 Audio test: ${report.join(' · ')}` }))
     }
     // Speaks what the exercise now showing asks to hear when it opens.
     const opened = async () => {
@@ -346,9 +365,18 @@ export const register: Register = on => {
               </Box>
             )
           })}
-          {s.note && <Text color="red">{s.note}</Text>}
+          {s.note && (
+            <Box marginTop={1}>
+              <Text color="red">{s.note}</Text>
+            </Box>
+          )}
+          <Box marginTop={1}>
+            <Box borderStyle="round" borderColor="gray" paddingX={1}>
+              <Button key="audiotest" hotkey="a" label="🔧 Audio test" onPress={testAudio} />
+            </Box>
+          </Box>
           {open && n > 0 && (
-            <Box>
+            <Box marginTop={1}>
               <Box borderStyle="round" borderColor="gray" paddingX={1} marginRight={1}>
                 <Button key="practice" hotkey="x" label="💪 Practice" onPress={openPractice} />
               </Box>
