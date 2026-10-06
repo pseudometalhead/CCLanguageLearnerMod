@@ -2,81 +2,19 @@ import { atom, read, update } from 'claude-code'
 import type { Register } from 'claude-code'
 
 import type { App, Level } from '../types'
+import { APP_NAME, LEVELS, LEVEL_INFO } from './course'
+import { COURSES, DEFAULT_COURSE, courseOf } from './courses'
+import { DAY, doneCount, firstOpen, fresh, GOAL, levelOpen, MAX_HEARTS, newApp, nextTarget, nodeState, restore, sk, starsOf, switchCourse } from './progress'
 import { bar, buildLesson, buildPractice, buildTest, heartsRow, isReview, lessonInfo, LESSONS_PER_LEVEL, unitIndex } from './engine'
-import { LEVELS, LEVEL_INFO, UNITS } from './lessons'
 
 const PANE = 'language-learner'
 const STORE = 'app-v3'
-const MAX_HEARTS = 5
-const GOAL = 30
-const DAY = 86_400_000
-const PRAISE = ['Super!', 'Prima!', 'Genau!', 'Sehr gut!', 'Toll!', 'Perfekt!', 'Klasse!']
 // How far each node of a unit sits from the left edge, so the path winds like a river.
 const WIND = [4, 9, 12, 9, 4]
 const WIND_NARROW = [0, 2, 4, 2, 0]
 
-const fresh = {
-  picked: null,
-  used: [] as number[],
-  sel: null,
-  matched: [] as string[],
-  status: 'idle' as const,
-  slip: false,
-  note: '',
-  gain: 0,
-}
-
-const initial: App = {
-  screen: 'home' as const,
-  level: 'A1',
-  unit: 0,
-  lesson: 0,
-  ex: [],
-  i: 0,
-  ...fresh,
-  hearts: MAX_HEARTS,
-  sound: true,
-  combo: 0,
-  best: 0,
-  xp: 0,
-  dayXp: 0,
-  goalDay: 0,
-  streak: 0,
-  lastDay: 0,
-  correct: 0,
-  gained: 0,
-  lastStars: 0,
-  passed: false,
-  stars: {},
-  tested: {},
-}
-
+const initial = newApp(DEFAULT_COURSE)
 const app = atom({ plugin: 'language-learner', key: 'app' } as const, initial)
-
-// ---- progress rules -----------------------------------------------------------------------
-const sk = (level: string, idx: number) => `${level}:${idx}`
-const starsOf = (a: App, level: string, idx: number) => a.stars[sk(level, idx)] ?? 0
-const doneCount = (a: App, level: string) => Array.from({ length: LESSONS_PER_LEVEL }, (_, i) => starsOf(a, level, i)).filter(n => n > 0).length
-
-const levelOpen = (a: App, level: string) => {
-  const k = LEVELS.indexOf(level as Level)
-  return k <= 0 || !!a.tested[level] || doneCount(a, LEVELS[k - 1]) >= LESSONS_PER_LEVEL
-}
-
-const nodeState = (a: App, level: string, idx: number): 'done' | 'current' | 'locked' =>
-  starsOf(a, level, idx) > 0 ? 'done' : levelOpen(a, level) && (idx === 0 || starsOf(a, level, idx - 1) > 0) ? 'current' : 'locked'
-
-const firstOpen = (a: App, level: string) => {
-  for (let i = 0; i < LESSONS_PER_LEVEL; i++) if (starsOf(a, level, i) === 0) return i
-  return LESSONS_PER_LEVEL - 1
-}
-
-const nextTarget = (a: App): [Level, number] | null => {
-  if (!a.passed || a.lesson < 0) return null
-  if (a.lesson + 1 < LESSONS_PER_LEVEL) return [a.level, a.lesson + 1]
-  const nl = LEVELS[LEVELS.indexOf(a.level) + 1]
-  return nl && levelOpen(a, nl) ? [nl, 0] : null
-}
 
 // ---- scoring ------------------------------------------------------------------------------
 const right = (a: App): App => {
@@ -92,32 +30,18 @@ const wrong = (a: App, isSoft = false): App => ({ ...a, status: 'wrong', combo: 
 
 export const register: Register = on => {
   on('session.start', async ($, e, next) => {
-    await $.command.register({ name: 'learn', description: 'Open the German course (A1 to C1)' })
+    await $.command.register({ name: 'learn', description: 'Open the language course (A1 to C1)' })
     const saved = (await $.store.get(STORE)) as Partial<App> | undefined
     if (saved) {
       const today = Math.floor((await $.clock.now()) / DAY)
-      const streak = (saved.lastDay ?? 0) >= today - 1 ? (saved.streak ?? 0) : 0
-      const stars = saved.stars ?? {}
-      const loaded: App = {
-        ...initial,
-        sound: saved.sound ?? true,
-        xp: saved.xp ?? 0,
-        lastDay: saved.lastDay ?? 0,
-        goalDay: saved.goalDay ?? 0,
-        dayXp: saved.goalDay === today ? (saved.dayXp ?? 0) : 0,
-        stars,
-        tested: saved.tested ?? {},
-        streak,
-      }
-      const lv = [...LEVELS].reverse().find(l => levelOpen(loaded, l)) ?? 'A1'
-      await update($, app, () => ({ ...loaded, level: lv, unit: unitIndex(firstOpen(loaded, lv)) }))
+      await update($, app, () => restore(saved, today, Object.keys(COURSES)))
     }
     return next(e)
   })
 
   on('command.run', { command: 'learn' }, async $ => {
-    await $.ui.open({ id: PANE, title: 'LinguaCC' })
-    return { text: 'LinguaCC opened. Pick a lesson on the map.' }
+    await $.ui.open({ id: PANE, title: APP_NAME })
+    return { text: `${APP_NAME} opened. Pick a lesson on the map.` }
   })
 
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
@@ -125,6 +49,7 @@ export const register: Register = on => {
     const s = await read($, app)
     const info = LEVEL_INFO[s.level]
     const x = s.ex[s.i]
+    const course = courseOf(s.lang)
     // The pane can be narrow: tighten the winding path and stack wide columns.
     const cols = e.props.bodyColumns || 56
     const narrow = cols < 46
@@ -132,9 +57,9 @@ export const register: Register = on => {
     // ---- audio ----------------------------------------------------------------------------
     const say = async (text: string) => {
       try {
-        await $.audio.speak(text, { voice: 'Anna' })
+        await $.audio.speak(text, { voice: course.voice })
       } catch {
-        await update($, app, a => ({ ...a, note: `🔇 No audio here (needs macOS + German voice "Anna"). It says: “${text}”` }))
+        await update($, app, a => ({ ...a, note: `🔇 No audio here (needs macOS + ${course.voiceHint}). It says: “${text}”` }))
       }
     }
     // Speaks what the exercise now showing asks to hear when it opens.
@@ -143,7 +68,7 @@ export const register: Register = on => {
       const q = a.ex[a.i]
       if (a.sound && q && q.kind !== 'match' && q.auto && q.say) await say(q.say)
     }
-    // Runs an answer; once it settles the exercise, speaks the German text it carries.
+    // Runs an answer; once it settles the exercise, speaks the text it carries.
     const answered = async (run: () => Promise<unknown>) => {
       const before = await read($, app)
       await run()
@@ -189,10 +114,10 @@ export const register: Register = on => {
         best: 0,
         ex:
           a.lesson === -1
-            ? buildTest(a.level, seed)
+            ? buildTest(courseOf(a.lang), a.level, seed)
             : a.lesson === -2
-              ? buildPractice(a.level, Array.from({ length: LESSONS_PER_LEVEL }, (_, i) => i).filter(i => starsOf(a, a.level, i) > 0), seed)
-              : buildLesson(a.level, a.lesson, seed),
+              ? buildPractice(courseOf(a.lang), a.level, Array.from({ length: LESSONS_PER_LEVEL }, (_, i) => i).filter(i => starsOf(a, a.level, i) > 0), seed)
+              : buildLesson(courseOf(a.lang), a.level, a.lesson, seed),
       }))
       await opened()
     }
@@ -238,7 +163,7 @@ export const register: Register = on => {
           const parts = a.used.map(k => q.bank[k])
           if (parts.join(q.kind === 'spell' ? '' : ' ') === q.answer) return right(a)
           const sameWords = q.kind === 'build' && [...parts].sort().join(' ') === q.answer.split(' ').sort().join(' ')
-          // Word order is often free in German and English, so a reshuffle costs no heart.
+          // Word order is often free in both languages, so a reshuffle costs no heart.
           return sameWords
             ? { ...wrong(a, true), note: `Same words, different order. Yours may work too, no heart lost. You will see it once more at the end. Model answer: ${q.answer}` }
             : wrong(a)
@@ -265,7 +190,7 @@ export const register: Register = on => {
         const bonus = !passed ? 0 : isTest ? 20 : isPractice ? 5 : 10 + (a.hearts === MAX_HEARTS ? 5 : 0)
         const total = a.gained + bonus
         const streak = passed && a.lastDay !== today ? (a.lastDay === today - 1 ? a.streak + 1 : 1) : a.streak
-        const key = sk(a.level, a.lesson)
+        const key = sk(a.lang, a.level, a.lesson)
         return {
           ...a,
           screen: 'result' as const,
@@ -278,15 +203,15 @@ export const register: Register = on => {
           streak,
           lastDay: passed ? today : a.lastDay,
           stars: !isTest && !isPractice && passed ? { ...a.stars, [key]: Math.max(a.stars[key] ?? 0, stars) } : a.stars,
-          tested: isTest && passed ? { ...a.tested, [a.level]: true } : a.tested,
+          tested: isTest && passed ? { ...a.tested, [`${a.lang}:${a.level}`]: true } : a.tested,
         }
       })
       const a = await read($, app)
-      await $.store.set(STORE, { sound: a.sound, xp: a.xp, streak: a.streak, lastDay: a.lastDay, dayXp: a.dayXp, goalDay: a.goalDay, stars: a.stars, tested: a.tested })
+      await $.store.set(STORE, { lang: a.lang, sound: a.sound, xp: a.xp, streak: a.streak, lastDay: a.lastDay, dayXp: a.dayXp, goalDay: a.goalDay, stars: a.stars, tested: a.tested })
       if (a.passed && a.lesson === -1) $.ui.toast(`🚀 ${a.level} ${LEVEL_INFO[a.level].name} unlocked!`)
       else if (a.passed && a.lesson >= 0 && before === 0) {
         const u = unitIndex(a.lesson)
-        if ([0, 1, 2, 3, 4].every(p => starsOf(a, a.level, u * 5 + p) > 0)) $.ui.toast(`🏆 Unit complete: ${UNITS[a.level][u].title}`)
+        if ([0, 1, 2, 3, 4].every(p => starsOf(a, a.level, u * 5 + p) > 0)) $.ui.toast(`🏆 Unit complete: ${courseOf(a.lang).levels[a.level][u].title}`)
         if (doneCount(a, a.level) >= LESSONS_PER_LEVEL) $.ui.toast(`🎉 ${a.level} ${LEVEL_INFO[a.level].name} complete!`)
       }
     }
@@ -295,7 +220,7 @@ export const register: Register = on => {
     const header = (
       <Box borderStyle="round" borderColor="cyan" paddingX={1} flexDirection="column">
         <Box>
-          <Text bold color="cyan">🌍 LinguaCC <Text dimColor>· German </Text></Text>
+          <Text bold color="cyan">🌍 {APP_NAME} <Text dimColor>· {course.flag} {course.name} </Text></Text>
           <Button key="sound" label={s.sound ? '🔊 on' : '🔇 off'} onPress={() => update($, app, a => ({ ...a, sound: !a.sound }))} />
         </Box>
         <Text>🔥 {s.streak}   ⭐ {s.xp}   🎯 {Math.min(s.dayXp, GOAL)}/{GOAL} <Text color="green">{bar(Math.min(s.dayXp, GOAL), GOAL, 8)}</Text></Text>
@@ -306,23 +231,30 @@ export const register: Register = on => {
     if (s.screen === 'home') {
       const open = levelOpen(s, s.level)
       const n = doneCount(s, s.level)
-      const unit = UNITS[s.level][s.unit]
+      const unit = course.levels[s.level][s.unit]
       const cur = firstOpen(s, s.level)
       const base = narrow ? WIND_NARROW : WIND
       const wind = s.unit % 2 === 0 ? base : [...base].reverse()
-      const fresh0 = doneCount(s, 'A1') === 0 && s.xp === 0
+      const fresh0 = LEVELS.every(l => doneCount(s, l) === 0)
       const coach = !open
         ? 'This level is locked. Finish the one before, or jump ahead!'
         : fresh0
-          ? 'Willkommen! Tap the ▶️ to start your first lesson.'
+          ? course.coach.welcome
           : n >= LESSONS_PER_LEVEL
-            ? 'Alles geschafft. Sehr gut!'
+            ? course.coach.done
             : s.dayXp >= GOAL
-              ? `Tagesziel erreicht! Next up: ${lessonInfo(s.level, cur).title}.`
-              : `Auf geht’s: ${lessonInfo(s.level, cur).title}!`
+              ? course.coach.goal.replace('{title}', lessonInfo(course, s.level, cur).title)
+              : course.coach.next.replace('{title}', lessonInfo(course, s.level, cur).title)
       return (
         <Box flexDirection="column">
           {header}
+          {Object.keys(COURSES).length > 1 && (
+            <Box>
+              {Object.values(COURSES).map(c => (
+                <Button key={`lang-${c.code}`} label={`${c.code === s.lang ? '●' : '○'} ${c.flag} ${c.name}  `} onPress={() => update($, app, a => switchCourse(a, c.code))} />
+              ))}
+            </Box>
+          )}
           <Box>
             {LEVELS.map(lv => (
               <Button key={`tab-${lv}`} label={`${lv === s.level ? '▣' : levelOpen(s, lv) ? '□' : '🔒'} ${lv}  `} onPress={() => goLevel(lv)} />
@@ -342,7 +274,7 @@ export const register: Register = on => {
             const idx = s.unit * 5 + p
             const st = nodeState(s, s.level, idx)
             const rev = isReview(idx)
-            const title = lessonInfo(s.level, idx).title
+            const title = lessonInfo(course, s.level, idx).title
             const color = st === 'locked' ? 'gray' : st === 'done' ? 'yellow' : rev ? 'magenta' : info.color
             const face = st === 'locked' ? '🔒' : st === 'done' ? (rev ? '👑' : '⭐') : rev ? '🏆' : '▶️'
             const got = starsOf(s, s.level, idx)
@@ -391,7 +323,7 @@ export const register: Register = on => {
 
     // ================================ WORDS ==================================================
     if (s.screen === 'words') {
-      const unit = UNITS[s.level][s.unit]
+      const unit = course.levels[s.level][s.unit]
       const got = unit.lessons.map((l, p) => ({ l, p })).filter(({ p }) => starsOf(s, s.level, s.unit * 5 + p) > 0)
       return (
         <Box flexDirection="column">
@@ -428,7 +360,7 @@ export const register: Register = on => {
     if (s.screen === 'intro') {
       const isTest = s.lesson === -1
       const isPractice = s.lesson === -2
-      const { unit, review: isRev, lesson } = lessonInfo(s.level, Math.max(0, s.lesson))
+      const { unit, review: isRev, lesson } = lessonInfo(course, s.level, Math.max(0, s.lesson))
       return (
         <Box flexDirection="column">
           {header}
@@ -500,7 +432,7 @@ export const register: Register = on => {
           </Box>
           {target && (
             <Box borderStyle="round" borderColor="green" paddingX={1}>
-              <Button key="next" hotkey="n" label={`Next: ${lessonInfo(target[0], target[1]).title} ▶`} onPress={() => openLesson(target[0], target[1])} />
+              <Button key="next" hotkey="n" label={`Next: ${lessonInfo(course, target[0], target[1]).title} ▶`} onPress={() => openLesson(target[0], target[1])} />
             </Box>
           )}
           <Box>
@@ -616,7 +548,7 @@ export const register: Register = on => {
         {answered1 && (
           <Box borderStyle="round" borderColor={ok ? 'green' : 'red'} paddingX={1} flexDirection="column">
             <Text bold color={ok ? 'green' : 'red'}>
-              {ok ? '✅' : '❌'} {ok ? PRAISE[s.i % PRAISE.length] : 'Nicht ganz.'}
+              {ok ? '✅' : '❌'} {ok ? course.praise[s.i % course.praise.length] : course.oops}
               {ok && s.gain > 0 ? `  +${s.gain} XP` : ''}
               {ok && s.combo >= 3 ? `  🔥 ${s.combo} in a row` : ''}
             </Text>

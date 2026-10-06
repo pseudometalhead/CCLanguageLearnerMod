@@ -1,6 +1,7 @@
 import { expect, mock, test } from 'claude-code/testing'
 
 import type { Exercise } from '../types'
+import { german } from './courses/de'
 import { buildLesson, buildPractice, buildTest } from './engine'
 
 const NOW = 1_700_000_000_000
@@ -69,7 +70,7 @@ const blunder = async (ui: any, x: Exercise) => {
 const playLesson = async (ui: any, level: 'A1' | 'A2' | 'B1' | 'B2' | 'C1', idx: number) => {
   await ui.press({ key: `node-${idx}` })
   await ui.press({ key: 'start' })
-  for (const x of buildLesson(level, idx, SEED)) {
+  for (const x of buildLesson(german, level, idx, SEED)) {
     await solve(ui, x)
     await ui.press({ key: 'continue' })
   }
@@ -109,7 +110,7 @@ test('a lesson opens on an intro with the new words, then plays through to 3 sta
   await ui.press({ key: 'w-0' })
   expect(spoken).toEqual(['hallo'])
   await ui.press({ key: 'start' })
-  const ex = buildLesson('A1', 0, SEED)
+  const ex = buildLesson(german, 'A1', 0, SEED)
   for (const x of ex) {
     await solve(ui, x)
     expect(await ui.find({ text: /Super!|Prima!|Genau!|Sehr gut!|Toll!|Perfekt!|Klasse!/ })).toBeDefined()
@@ -136,7 +137,7 @@ test('a whole unit unlocks its review, which ends in a crown', async ($, on) => 
   await ui.press({ key: 'node-4' })
   expect(await ui.find({ text: /UNIT REVIEW · Hallo!/ })).toBeDefined()
   await ui.press({ key: 'start' })
-  for (const x of buildLesson('A1', 4, SEED)) {
+  for (const x of buildLesson(german, 'A1', 4, SEED)) {
     await solve(ui, x)
     await ui.press({ key: 'continue' })
   }
@@ -155,7 +156,7 @@ test('five mistakes lose every heart and fail the lesson', async ($, on) => {
   const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
   await ui.press({ key: 'node-0' })
   await ui.press({ key: 'start' })
-  const ex = buildLesson('A1', 0, SEED)
+  const ex = buildLesson(german, 'A1', 0, SEED)
   let lost = 0
   for (const x of ex) {
     if (lost >= 5) break
@@ -176,7 +177,7 @@ test('a re-ordered sentence costs no heart and shows the model answer', async ($
   const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
   await ui.press({ key: 'node-0' })
   await ui.press({ key: 'start' })
-  for (const x of buildLesson('A1', 0, SEED)) {
+  for (const x of buildLesson(german, 'A1', 0, SEED)) {
     if (x.kind === 'build' && x.answer.split(' ').length > 2) {
       const want = x.answer.split(' ').reverse()
       expect(want.join(' ')).not.toBe(x.answer)
@@ -199,7 +200,7 @@ test('audio: listening puzzles autoplay German, Play repeats, the toggle mutes',
   const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
   await ui.press({ key: 'node-0' })
   await ui.press({ key: 'start' })
-  const ex = buildLesson('A1', 0, SEED)
+  const ex = buildLesson(german, 'A1', 0, SEED)
   const first = ex[0]
   expect(first.kind === 'choice' && first.say).toBeTruthy()
   await ui.press({ key: 'play' })
@@ -253,7 +254,7 @@ test('the placement quiz unlocks a level without finishing the one below', async
   await ui.press({ key: 'test' })
   expect(await ui.find({ text: /PLACEMENT QUIZ → B1/ })).toBeDefined()
   await ui.press({ key: 'start' })
-  for (const x of buildTest('B1', SEED)) {
+  for (const x of buildTest(german, 'B1', SEED)) {
     await solve(ui, x)
     await ui.press({ key: 'continue' })
   }
@@ -271,7 +272,7 @@ test('a mistake comes back once at the end of the lesson, and earns no XP the se
   const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
   await ui.press({ key: 'node-0' })
   await ui.press({ key: 'start' })
-  const ex = buildLesson('A1', 0, SEED)
+  const ex = buildLesson(german, 'A1', 0, SEED)
   expect(ex[0].kind).toBe('choice')
   await blunder(ui, ex[0])
   await ui.press({ key: 'continue' })
@@ -302,7 +303,7 @@ test('practice appears after the first finished lesson, pays 5 XP and leaves the
   await ui.press({ key: 'practice' })
   expect(await ui.find({ text: /PRACTICE · A1/ })).toBeDefined()
   await ui.press({ key: 'start' })
-  const ex = buildPractice('A1', [0], SEED)
+  const ex = buildPractice(german, 'A1', [0], SEED)
   for (const x of ex) {
     await solve(ui, x)
     await ui.press({ key: 'continue' })
@@ -357,7 +358,7 @@ test('a narrow pane still draws every screen', async ($, on) => {
   expect(await ui.find({ text: /Greetings/ })).toBeDefined()
   await ui.press({ key: 'node-0' })
   await ui.press({ key: 'start' })
-  for (const x of buildLesson('A1', 0, SEED)) {
+  for (const x of buildLesson(german, 'A1', 0, SEED)) {
     await solve(ui, x)
     await ui.press({ key: 'continue' })
   }
@@ -391,7 +392,7 @@ test('tapping an already matched word does not cost a heart', async ($, on) => {
   const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
   await ui.press({ key: 'node-0' })
   await ui.press({ key: 'start' })
-  const ex = buildLesson('A1', 0, SEED)
+  const ex = buildLesson(german, 'A1', 0, SEED)
   let k = 0
   while (ex[k].kind !== 'match') {
     await solve(ui, ex[k])
@@ -414,7 +415,7 @@ test('quitting a lesson half way forfeits the XP it earned', async ($, on) => {
   const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
   await ui.press({ key: 'node-0' })
   await ui.press({ key: 'start' })
-  await solve(ui, buildLesson('A1', 0, SEED)[0])
+  await solve(ui, buildLesson(german, 'A1', 0, SEED)[0])
   expect(await ui.find({ text: /\+2 XP/ })).toBeDefined()
   await ui.press({ key: 'quit' })
   expect(await ui.find({ text: /⭐ 0/ })).toBeDefined()

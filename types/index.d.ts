@@ -22,6 +22,8 @@ export type Exercise =
   | { kind: 'build'; title: string; again?: boolean; prompt: string; answer: string; bank: string[]; say?: string; auto?: boolean; after?: string }
 
 export type App = {
+  /** Course being studied: 'de'. Progress is kept per course. */
+  lang: string
   screen: 'home' | 'intro' | 'play' | 'result' | 'words'
   level: Level
   unit: number
@@ -50,9 +52,9 @@ export type App = {
   gained: number
   lastStars: number
   passed: boolean
-  /** Best stars (1 to 3) per finished lesson, keyed "A1:0". */
+  /** Best stars (1 to 3) per finished lesson, keyed "de:A1:0". */
   stars: Record<string, number>
-  /** Levels opened by passing the placement quiz. */
+  /** Levels opened by passing the placement quiz, keyed "de:B1". */
   tested: Record<string, boolean>
 }
 

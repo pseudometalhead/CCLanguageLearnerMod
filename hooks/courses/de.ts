@@ -1,21 +1,23 @@
-export type Pair = [german: string, english: string]
-// A sentence marks the word to blank out in a cloze puzzle with [brackets].
-export type Lesson = { title: string; words: Pair[]; sentences: [Pair, Pair] }
-export type Unit = { title: string; sub: string; emoji: string; tip: string; lessons: Lesson[] }
+import type { Course } from '../course'
+import { lesson as L } from '../course'
 
-export const LEVELS = ['A1', 'A2', 'B1', 'B2', 'C1'] as const
-
-export const LEVEL_INFO: Record<string, { name: string; color: string; blurb: string }> = {
-  A1: { name: 'Beginner', color: 'green', blurb: 'Greetings, food, family and your day' },
-  A2: { name: 'Elementary', color: 'cyan', blurb: 'Shopping, travel, health and the past' },
-  B1: { name: 'Intermediate', color: 'yellow', blurb: 'Opinions, work, media and problems' },
-  B2: { name: 'Upper-Intermediate', color: 'magenta', blurb: 'Society, argument and abstract ideas' },
-  C1: { name: 'Advanced', color: 'red', blurb: 'Nuance, academic style and idioms' },
-}
-
-const L = (title: string, words: Pair[], s0: Pair, s1: Pair): Lesson => ({ title, words, sentences: [s0, s1] })
-
-export const UNITS: Record<string, Unit[]> = {
+export const german: Course = {
+  code: 'de',
+  name: 'German',
+  flag: '🇩🇪',
+  voice: 'Anna',
+  voiceHint: 'German voice "Anna"',
+  article: { options: ['der', 'die', 'das'], noun: /^(der|die|das) \S+$/, strip: /^(der|die|das) / },
+  capitalNouns: true,
+  praise: ['Super!', 'Prima!', 'Genau!', 'Sehr gut!', 'Toll!', 'Perfekt!', 'Klasse!'],
+  oops: 'Nicht ganz.',
+  coach: {
+    welcome: 'Willkommen! Tap the ▶️ to start your first lesson.',
+    goal: 'Tagesziel erreicht! Next up: {title}.',
+    next: 'Auf geht’s: {title}!',
+    done: 'Alles geschafft. Sehr gut!',
+  },
+  levels: {
   A1: [
     {
       title: 'Hallo!', sub: 'Greetings & basics', emoji: '👋',
@@ -226,4 +228,5 @@ export const UNITS: Record<string, Unit[]> = {
       ],
     },
   ],
+},
 }

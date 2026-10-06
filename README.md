@@ -42,6 +42,20 @@ or from a terminal:
 
 Then type `/learn`. Update later with `claude plugin marketplace update linguacc`.
 
+## Adding a language
+
+The engine and the UI know nothing about German. Everything language-specific lives in one file per course:
+
+1. Copy `hooks/courses/de.ts` to `hooks/courses/fr.ts` and fill in the `Course`: `code`, `name`, `flag`, the system `voice`
+   for audio, the `article` rules (leave `article` out if the language has no gendered articles), `praise`, `coach`
+   lines, and the 5 levels x 4 units x 4 lessons.
+2. Register it in `hooks/courses/index.ts`.
+3. `claude plugin test .` runs every content test against the new course automatically: no duplicate words,
+   every gap sentence valid, every puzzle solvable, no leftover German wording.
+
+Learners then get a language switcher on the map. Stars and unlocks are kept per course; XP, streak and the daily
+goal are shared. `npx tsx scripts/lessons-md.ts > LESSONS.md` regenerates the table of lessons.
+
 ## Run from a checkout and test
     claude --plugin-dir /path/to/this/repo
     claude plugin validate .
