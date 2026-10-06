@@ -83,7 +83,11 @@ export const primaryKey = (a: App): string | undefined => {
   if (a.screen === 'play') {
     const x = a.ex[a.i]
     if (a.status !== 'idle') return 'continue'
-    return x && (x.kind === 'build' || x.kind === 'spell') && a.used.length > 0 ? 'check' : undefined
+    if (!x) return undefined
+    // Nothing answered yet: the ring goes to the first thing to press, so the keyboard stays in the pane for each new question.
+    if (x.kind === 'choice') return `opt-${x.options[0]}`
+    if (x.kind === 'match') return x.left.some(t => !a.matched.includes(t)) ? `l-${x.left.find(t => !a.matched.includes(t))}` : undefined
+    return a.used.length > 0 ? 'check' : 'b-0'
   }
   if (a.screen === 'home') {
     if (newLearner(a)) return 'check-new'

@@ -53,12 +53,28 @@ const right = (a: App): App => {
 const wrong = (a: App, isSoft = false): App => ({ ...a, status: 'wrong', combo: 0, slip: true, gain: 0, hearts: isSoft || isCheck(a) ? a.hearts : a.hearts - 1 })
 
 // Asks for the keys back and puts the ring on the button Enter should act on.
+// Focus diagnostics: when DIAG names a file, the last lines of what the pane did with the keyboard are written to it.
+const DIAG: string | undefined = undefined
+const diagLines: string[] = []
+async function trace($: any, line: string) {
+  if (!DIAG) return
+  try {
+    diagLines.push(`${await $.clock.now()} ${line}`)
+    if (diagLines.length > 120) diagLines.shift()
+    await $.fs.write(DIAG, diagLines.join('\n'))
+  } catch {
+    // diagnostics never get in the way
+  }
+}
+
 async function regain($: any) {
   try {
     const key = primaryKey(await read($, app))
-    await $.ui.open({ id: PANE, title: APP_NAME, focus: true })
-    if (key) await $.ui.focus({ requestId: PANE, key })
-  } catch {
+    const opened = await $.ui.open({ id: PANE, title: APP_NAME, focus: true })
+    const moved = key ? await $.ui.focus({ requestId: PANE, key }) : undefined
+    await trace($, `regain key=${key} open=${JSON.stringify(opened)} focus=${JSON.stringify(moved)}`)
+  } catch (err) {
+    await trace($, `regain failed ${err instanceof Error ? err.message : String(err)}`)
     // the pane may already hold the keys, or the surface refuses focus: nothing to do
   }
 }
@@ -79,6 +95,7 @@ export const register: Register = on => {
   // Start...), and the redraw lands after this hook returns: asking for the keys only now finds them still in the pane
   // and changes nothing. So ask once now and once more a moment later, when the keys have gone back to the prompt.
   on('ui.press', { plugin: 'language-learner' }, async ($, e, next) => {
+    await trace($, `press ${e.element} on ${e.surface}`)
     const pressed = await next(e)
     await regain($)
     void (async () => {
@@ -94,10 +111,20 @@ export const register: Register = on => {
     return pressed
   })
 
+  on('ui.focus', { requestId: PANE }, async ($, e, next) => {
+    await trace($, `focus moves to ${e.element ?? '(engine stop)'} by ${(e.origin as any).kind}`)
+    return next(e)
+  })
+  on('ui.close', { id: PANE } as any, async ($, e: any, next) => {
+    await trace($, `pane closed by ${e.origin?.kind ?? JSON.stringify(e.origin)}`)
+    return next(e)
+  })
+
   // Hotkeys only work while the pane holds the keyboard, so open it focused (Escape hands the keys back;
   // ctrl+x tab or a click takes them again).
   for (const command of ['babel-learning', 'learn']) {
     on('command.run', { command }, async $ => {
+      await trace($, `command ${command}`)
       await $.ui.open({ id: PANE, title: APP_NAME, focus: true })
       // The command is still running, so the surface refuses to hand over the keys now: ask again once it has ended
       // and the prompt is idle and empty, or the person has to click the pane before the keyboard works.
@@ -118,6 +145,7 @@ export const register: Register = on => {
   on('ui.render', { component: 'Pane', requestId: PANE }, async ($, e) => {
     const { Box, Text, Button } = $.ui.resolve(e)
     const s = await read($, app)
+    await trace($, `render ${s.screen} ${s.level}`)
     const info = LEVEL_INFO[s.level]
     const x = s.ex[s.i]
     const course = courseOf(s.lang)
@@ -401,12 +429,15 @@ export const register: Register = on => {
       })
       const a = await read($, app)
       await $.store.set(STORE, { lang: a.lang, sound: a.sound, xp: a.xp, streak: a.streak, lastDay: a.lastDay, dayXp: a.dayXp, goalDay: a.goalDay, stars: a.stars, tested: a.tested })
-      if (diag) $.ui.toast(`🎯 Start at ${a.level} ${LEVEL_INFO[a.level].name}`)
-      else if (a.passed && a.lesson === -1) $.ui.toast(`🚀 ${a.level} ${LEVEL_INFO[a.level].name} unlocked!`)
-      else if (a.passed && a.lesson >= 0 && before === 0) {
-        const u = unitIndex(a.lesson)
-        if ([0, 1, 2, 3, 4].every(p => starsOf(a, a.level, u * 5 + p) > 0)) $.ui.toast(`🏆 Unit complete: ${courseOf(a.lang).levels[a.level][u].title}`)
-        if (doneCount(a, a.level) >= LESSONS_PER_LEVEL) $.ui.toast(`🎉 ${a.level} ${LEVEL_INFO[a.level].name} complete!`)
+      // A toast takes the keyboard back to the prompt on a desktop, so there the result card says it instead.
+      if (!desk) {
+        if (diag) $.ui.toast(`🎯 Start at ${a.level} ${LEVEL_INFO[a.level].name}`)
+        else if (a.passed && a.lesson === -1) $.ui.toast(`🚀 ${a.level} ${LEVEL_INFO[a.level].name} unlocked!`)
+        else if (a.passed && a.lesson >= 0 && before === 0) {
+          const u = unitIndex(a.lesson)
+          if ([0, 1, 2, 3, 4].every(p => starsOf(a, a.level, u * 5 + p) > 0)) $.ui.toast(`🏆 Unit complete: ${courseOf(a.lang).levels[a.level][u].title}`)
+          if (doneCount(a, a.level) >= LESSONS_PER_LEVEL) $.ui.toast(`🎉 ${a.level} ${LEVEL_INFO[a.level].name} complete!`)
+        }
       }
     }
 
@@ -698,6 +729,8 @@ export const register: Register = on => {
               {plain(isDiag ? `🎯 YOUR LEVEL: ${s.level} · ${LEVEL_INFO[s.level].name}` : s.passed ? (isTest ? '🚀 LEVEL UNLOCKED' : isPractice ? '💪 PRACTICE COMPLETE' : '🏆 LESSON COMPLETE') : isTest ? '😕 NOT QUITE, TRY AGAIN' : '💔 OUT OF HEARTS')}
             </Text>
             {isDiag && <Text color={ink}>You cleared {s.dpass} of {LEVELS.length} levels{s.dpass > 0 ? `, up to ${LEVELS[Math.min(s.dpass, LEVELS.length) - 1]}` : ''}. {s.level} is where new material starts; the levels below stay open to browse.</Text>}
+            {desk && s.passed && s.lesson >= 0 && [0, 1, 2, 3, 4].every(p => starsOf(s, s.level, unitIndex(s.lesson) * 5 + p) > 0) && <Text bold color={th.a1}>Unit complete: {course.levels[s.level][unitIndex(s.lesson)].title}</Text>}
+            {desk && s.passed && s.lesson >= 0 && doneCount(s, s.level) >= LESSONS_PER_LEVEL && <Text bold color={th.a1}>{s.level} {LEVEL_INFO[s.level].name} complete</Text>}
             {!isTest && !isPractice && !isDiag && <Text color={ink}>{(desk ? '★' : '⭐').repeat(s.lastStars)}{'☆'.repeat(3 - s.lastStars)}</Text>}
             {isDiag ? <Text color={ink}>{desk ? '' : '⭐ '}+{s.gained} XP</Text> : <Text color={ink}>{desk ? '' : '🎯 '}{s.correct}/{s.ex.filter(q => !q.again).length} first try   {desk ? '' : '⭐ '}+{s.gained} XP   {desk ? '' : '🔥 '}best combo {s.best}</Text>}
             <Text color={ink} dimColor>Daily goal {goal}/{GOAL} <Text color={tint('green')}>{bar(goal, GOAL, 10)}</Text>{goal >= GOAL ? (desk ? ' ✓' : ' ✅') : ''}</Text>

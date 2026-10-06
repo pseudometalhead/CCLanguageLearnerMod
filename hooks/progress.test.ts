@@ -111,7 +111,11 @@ test('Enter always has a button to act on: the primary key follows the screen', 
   expect(primaryKey({ ...played, screen: 'result', lesson: -2 })).toBe('map')
   const ex = [{ kind: 'build' as const, title: 't', prompt: 'p', answer: 'a b', bank: ['a', 'b'] }]
   const play = { ...played, screen: 'play' as const, ex, i: 0 }
-  expect(primaryKey(play)).toBeUndefined()
+  expect(primaryKey(play)).toBe('b-0') // the first word of the bank, so the keyboard has somewhere to be
   expect(primaryKey({ ...play, used: [0] })).toBe('check')
   expect(primaryKey({ ...play, status: 'right' as const })).toBe('continue')
+  const pick = [{ kind: 'choice' as const, title: 't', prompt: 'p', answer: 'x', options: ['x', 'y'] }]
+  expect(primaryKey({ ...play, ex: pick })).toBe('opt-x')
+  const pairs = [{ kind: 'match' as const, title: 't', left: ['a', 'b'], right: ['1', '2'], pairs: { a: '1', b: '2' } }]
+  expect(primaryKey({ ...play, ex: pairs, matched: ['a'] })).toBe('l-b')
 })
