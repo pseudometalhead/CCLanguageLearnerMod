@@ -7,7 +7,7 @@
       "name": "language-learner",
       "source": "./",
       "description": "A Duolingo-style German course in a Claude Code pane: CEFR A1 to C1, 100 lessons, a winding map, a dozen puzzle types, audio, XP, hearts and streaks. Type /babel-learning.",
-      "version": "0.4.2",
+      "version": "0.4.3",
       "category": "education",
       "tags": ["german", "language-learning", "education", "duolingo", "learning"]
     }

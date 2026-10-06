@@ -4,7 +4,7 @@ import type { Register } from 'claude-code'
 import type { App, Level } from '../types'
 import { APP_NAME, LEVELS, LEVEL_INFO } from './course'
 import { COURSES, DEFAULT_COURSE, courseOf } from './courses'
-import { DAY, doneCount, firstOpen, fresh, GOAL, levelOpen, MAX_HEARTS, newApp, nextTarget, nodeState, placedLevel, placedTested, restore, sk, starsOf, switchCourse } from './progress'
+import { DAY, doneCount, firstOpen, fresh, GOAL, levelOpen, MAX_HEARTS, newApp, newLearner, nextTarget, nodeState, placedLevel, placedTested, primaryKey, restore, sk, starsOf, switchCourse } from './progress'
 import { BEEP_WAV } from './beep'
 import { bar, buildDiagnostic, buildLesson, buildPractice, buildTest, DIAG_PASS, DIAG_STAGE, heartsRow, isReview, lessonInfo, LESSONS_PER_LEVEL, unitIndex } from './engine'
 
@@ -40,6 +40,20 @@ export const register: Register = on => {
       await update($, app, () => restore(saved, today, Object.keys(COURSES)))
     }
     return next(e)
+  })
+
+  // The keyboard drifts back to the prompt when the button that held the focus ring is redrawn away (Continue,
+  // Start...). After every press, ask for the keys again and put the ring on the button Enter should act on.
+  on('ui.press', { plugin: 'language-learner' }, async ($, e, next) => {
+    const pressed = await next(e)
+    try {
+      const key = primaryKey(await read($, app))
+      await $.ui.open({ id: PANE, title: APP_NAME, focus: true })
+      if (key) await $.ui.focus({ requestId: PANE, key })
+    } catch {
+      // the pane may already hold the keys, or the surface refuses focus: nothing to do
+    }
+    return pressed
   })
 
   // Hotkeys only work while the pane holds the keyboard, so open it focused (Escape hands the keys back;
@@ -288,7 +302,7 @@ export const register: Register = on => {
       const wind = s.unit % 2 === 0 ? base : [...base].reverse()
       const fresh0 = LEVELS.every(l => doneCount(s, l) === 0)
       // Enter acts on the focus ring's start: the level check for a new learner, else the lesson to play next.
-      const showCheck = fresh0 && Object.keys(s.tested).every(k => !k.startsWith(`${s.lang}:`))
+      const showCheck = fresh0 && newLearner(s)
       const coach = !open
         ? 'This level is locked. Finish the one before, or jump ahead!'
         : fresh0

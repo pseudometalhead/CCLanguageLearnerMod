@@ -64,6 +64,26 @@ export const firstOpen = (a: App, level: string) => {
   return LESSONS_PER_LEVEL - 1
 }
 
+/** True until the learner has played, finished or placed anything in the current course. */
+export const newLearner = (a: App) =>
+  LEVELS.every(l => doneCount(a, l) === 0) && Object.keys(a.tested).every(k => !k.startsWith(`${a.lang}:`))
+
+/** The `key` of the button Enter should act on for what is showing, so the keyboard never has to leave the pane. */
+export const primaryKey = (a: App): string | undefined => {
+  if (a.screen === 'intro') return 'start'
+  if (a.screen === 'result') return nextTarget(a) ? 'next' : a.lesson === -3 ? 'begin' : 'map'
+  if (a.screen === 'play') {
+    const x = a.ex[a.i]
+    if (a.status !== 'idle') return 'continue'
+    return x && (x.kind === 'build' || x.kind === 'spell') && a.used.length > 0 ? 'check' : undefined
+  }
+  if (a.screen === 'home') {
+    if (newLearner(a)) return 'check-new'
+    for (let i = 0; i < LESSONS_PER_LEVEL; i++) if (unitIndex(i) === a.unit && nodeState(a, a.level, i) === 'current') return `node-${i}`
+  }
+  return undefined
+}
+
 /** The level a learner starts at after clearing `stages` stages of the level check. */
 export const placedLevel = (stages: number): Level => LEVELS[Math.min(stages, LEVELS.length - 1)]
 

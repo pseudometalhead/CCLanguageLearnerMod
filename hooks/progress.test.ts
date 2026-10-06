@@ -1,7 +1,7 @@
 import { expect, test } from 'claude-code/testing'
 
 import type { App } from '../types'
-import { doneCount, levelOpen, newApp, nextTarget, nodeState, placedLevel, placedTested, restore, switchCourse } from './progress'
+import { doneCount, levelOpen, newApp, nextTarget, newLearner, nodeState, placedLevel, primaryKey, placedTested, restore, switchCourse } from './progress'
 
 const done = (lang: string, level: string, n: number) => Object.fromEntries(Array.from({ length: n }, (_, i) => [`${lang}:${level}:${i}`, 3]))
 const base = (over: Partial<App>): App => ({ ...newApp('de'), ...over })
@@ -80,4 +80,23 @@ test('the level check places you after the last stage cleared and opens the leve
   expect(Object.keys(placedTested(a, 5)).sort()).toEqual(['de:A2', 'de:B1', 'de:B2', 'de:C1'])
   // another course keeps its own locks
   expect(levelOpen({ ...b, lang: 'fr' }, 'B1')).toBe(false)
+})
+
+test('Enter always has a button to act on: the primary key follows the screen', () => {
+  const a = base({})
+  expect(newLearner(a)).toBe(true)
+  expect(primaryKey(a)).toBe('check-new')
+  const played = base({ stars: done('de', 'A1', 2) })
+  expect(newLearner(played)).toBe(false)
+  expect(primaryKey(played)).toBe('node-2') // the next lesson to play
+  expect(primaryKey({ ...played, unit: 1 })).toBeUndefined() // not in the unit being shown
+  expect(primaryKey({ ...played, screen: 'intro' })).toBe('start')
+  expect(primaryKey({ ...played, screen: 'result', passed: true, lesson: 2 })).toBe('next')
+  expect(primaryKey({ ...played, screen: 'result', lesson: -3 })).toBe('begin')
+  expect(primaryKey({ ...played, screen: 'result', lesson: -2 })).toBe('map')
+  const ex = [{ kind: 'build' as const, title: 't', prompt: 'p', answer: 'a b', bank: ['a', 'b'] }]
+  const play = { ...played, screen: 'play' as const, ex, i: 0 }
+  expect(primaryKey(play)).toBeUndefined()
+  expect(primaryKey({ ...play, used: [0] })).toBe('check')
+  expect(primaryKey({ ...play, status: 'right' as const })).toBe('continue')
 })

@@ -444,6 +444,23 @@ test('both commands open the pane focused, so its hotkeys are armed', async ($, 
   expect(opened.every(o => o.focus === true)).toBe(true)
 })
 
+test('after each press the pane asks for the keys back', async ($, on) => {
+  world(on)
+  const asked: boolean[] = []
+  on('ui.open', async (_$: any, e: any) => {
+    asked.push(e.focus === true)
+    return { value: { isPlaced: true } }
+  })
+  const ui = await $.ui.mount({ ...PANE, surface: 'terminal' })
+  await ui.press({ key: 'check-new' })
+  await ui.press({ key: 'start' })
+  await solve(ui, buildDiagnostic(german, SEED)[0])
+  await ui.press({ key: 'continue' })
+  expect(asked.length).toBeGreaterThanOrEqual(4)
+  expect(asked.every(Boolean)).toBe(true)
+  await ui.unmount()
+})
+
 test('a narrow pane still draws every screen', async ($, on) => {
   world(on)
   const ui = await $.ui.mount({ ...PANE, props: { ...PANE.props, bodyColumns: 30 }, surface: 'terminal' })
