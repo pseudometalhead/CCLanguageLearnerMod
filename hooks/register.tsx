@@ -87,6 +87,18 @@ export const register: Register = on => {
   for (const command of ['babel-learning', 'learn']) {
     on('command.run', { command }, async $ => {
       await $.ui.open({ id: PANE, title: APP_NAME, focus: true })
+      // The command is still running, so the surface refuses to hand over the keys now: ask again once it has ended
+      // and the prompt is idle and empty, or the person has to click the pane before the keyboard works.
+      void (async () => {
+        for (const ms of [150, 450, 1000]) {
+          try {
+            await $.clock.sleep(ms)
+          } catch {
+            return
+          }
+          await regain($)
+        }
+      })()
       return { text: `${APP_NAME} opened. Pick a lesson on the map. Keys not responding? Click the pane, or press ctrl+x then tab.` }
     })
   }
